@@ -32,5 +32,3 @@ def draw_text(canvas, font, position, color, text):
     # assuming position is a tuple like (x, y)
     x, y = position
     graphics.DrawText(canvas, font, x, y, color, text)
-
-# You can add additional utility functions here as your project grows.
