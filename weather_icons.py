@@ -1,6 +1,5 @@
 from PIL import Image, ImageDraw
 import math
-import time
 
 # Global constants
 # Ideal for 5x7 font size
