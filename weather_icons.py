@@ -232,7 +232,6 @@ def create_rain_icon():
         (12, 10, 14, 15),
     ]
 
-    # Draw rain lines with increased thickness
     for line in rain_lines:
         # Increase line width for thicker raindrops
         draw_icon.line(line, fill=rain_color, width=2)
@@ -272,9 +271,5 @@ def create_fog_icon():
     # Draw the fog lines
     for line in fog_lines:
         draw_icon.line(line, fill=fog_color)
-
-    # Optionally, add a subtle gradient effect by overlaying semi-transparent lines
-    # This step is more complex and might not be visible on all displays, especially LED matrices
-    # If your display supports it, consider adding semi-transparent white lines here
 
     return icon_image
