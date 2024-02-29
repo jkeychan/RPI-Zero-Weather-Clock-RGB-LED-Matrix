@@ -34,12 +34,13 @@ def fetch_weather(api_endpoint, zip_code, api_key, temp_unit):
         sunrise = weather_data["sys"]["sunrise"]
         sunset = weather_data["sys"]["sunset"]
         main_weather = weather_data["weather"][0]["main"]
+        weather_description = weather_data["weather"][0]["description"]
 
         if temp_unit == 'F':
             temperature = int(celsius_to_fahrenheit(temperature))
             feels_like = int(celsius_to_fahrenheit(feels_like))
 
-        return temperature, feels_like, humidity, main_weather, sunrise, sunset
+        return temperature, feels_like, humidity, main_weather, sunrise, sunset, weather_description
     except requests.exceptions.RequestException as e:
         logging.error("Failed to get weather data:", e)
         return None, None, None, None, None, None
@@ -48,7 +49,7 @@ def fetch_weather(api_endpoint, zip_code, api_key, temp_unit):
 def fetch_weather_data_periodically(api_endpoint, zip_code, api_key, temp_unit, interval, global_vars):
     while True:
         try:
-            temperature, feels_like, humidity, main_weather, sunrise, sunset = fetch_weather(
+            temperature, feels_like, humidity, main_weather, sunrise, sunset, weather_description = fetch_weather(
                 api_endpoint, zip_code, api_key, temp_unit)
 
             if temperature is not None:
@@ -66,6 +67,7 @@ def fetch_weather_data_periodically(api_endpoint, zip_code, api_key, temp_unit, 
                 global_vars["main_weather"] = main_weather
                 global_vars["sunrise"] = sunrise  # store sunrise time
                 global_vars["sunset"] = sunset    # store sunset time
+                global_vars["weather_description"] = weather_description
                 global_vars["initial_weather_fetched"].set()
         except Exception as e:
             logging.error(f"Failed to fetch weather data: {e}")
