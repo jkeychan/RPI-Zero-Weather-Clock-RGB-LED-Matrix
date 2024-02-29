@@ -22,6 +22,9 @@ class AppConfig:
         self.FONT_PATH = config['Display']['FONT_PATH']
         self.FONT_SIZE = int(config['Display']['FONT_SIZE'])
         self.BRIGHTNESS = config.getint('Display', 'BRIGHTNESS', fallback=50)
+        self.preferred_server = config['NTP']['preferred_server']
+        self.text_cycle_interval = config.getint(
+            'Display', 'text_cycle_interval', fallback=10)
         # Ensure this function is defined and works properly.
         self.colors_map = load_colors_from_csv('colors.csv')
 
