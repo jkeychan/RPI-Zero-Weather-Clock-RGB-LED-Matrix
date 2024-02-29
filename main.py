@@ -222,18 +222,6 @@ class SplitDisplay(SampleBase):
                               self.app_config.FONT_SIZE * 3, main_weather_color, weather_text)
             scroll_pos = offscreen_canvas.width  # Reset for potential future scrolls
 
-        # Drawing the weather icon
-        if main_weather == 'Clear':
-            weather_icons.draw_sun(offscreen_canvas, HEIGHT, WIDTH)
-        elif main_weather == 'Clouds':
-            weather_icons.draw_cloud(offscreen_canvas, HEIGHT, WIDTH)
-        elif main_weather == 'Rain':
-            weather_icons.draw_rain(offscreen_canvas, HEIGHT, WIDTH)
-        elif main_weather == 'Snow':
-            weather_icons.draw_snow(offscreen_canvas, HEIGHT, WIDTH)
-        elif main_weather == 'Thunderstorm':
-            weather_icons.draw_thunderstorm(offscreen_canvas, HEIGHT, WIDTH)
-
         return scroll_pos  # Return updated scroll position for next iteration
 
     def run(self):
@@ -281,6 +269,8 @@ class SplitDisplay(SampleBase):
             scroll_pos = self.draw_weather_data(offscreen_canvas, font, temperature, feels_like,
                                                 humidity, main_weather, weather_description, show_main_weather, scroll_pos)
             offscreen_canvas = self.matrix.SwapOnVSync(offscreen_canvas)
+            # Draw weather icon
+            self.display_weather_icon(main_weather)
             time.sleep(0.03)
 
 
