@@ -77,7 +77,7 @@ def create_cloud_icon():
 
     # Sun parts (a circle peeping out from behind the cloud)
     sun_center = (4, 4)
-    sun_radius = 4
+    sun_radius = 2
 
     # Drawing the sun behind the cloud
     # Calculate the bounding box for the sun
