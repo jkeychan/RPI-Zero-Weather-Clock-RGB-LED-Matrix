@@ -30,11 +30,6 @@ TEMP_COLORS = [
     (float('inf'), (255, 0, 0))  # Bright Red for temperatures above 105F
 ]
 
-# Width and height for the "ant" animation
+# Width and height for the "ant" animation and for the text matrix
 WIDTH = 64
 HEIGHT = 32
-
-# Delay for the "ant" animation
-ANT_DELAY_MS = 100
-
-# You can add any other constants that your program requires here.
