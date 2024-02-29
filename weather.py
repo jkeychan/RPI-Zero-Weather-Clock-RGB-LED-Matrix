@@ -60,7 +60,7 @@ def fetch_weather_data_periodically(api_endpoint, zip_code, api_key, temp_unit, 
                     sunset, tz=datetime.timezone.utc).astimezone(tz=None).strftime('%H:%M')
 
                 logging.info(
-                    f"Weather fetched successfully: Temperature {temperature}, Feels Like {feels_like}, Humidity {humidity}, Main Weather {main_weather}, Sunrise {sunrise_time_str}, Sunset {sunset_time_str}")
+                    f"Weather fetched successfully: Temperature: {temperature}, Feels Like: {feels_like}, Humidity {humidity}, Main Weather: {main_weather}, Weather Detail: {weather_description}, Sunrise: {sunrise_time_str}, Sunset: {sunset_time_str}")
                 global_vars["temperature"] = temperature
                 global_vars["feels_like"] = feels_like
                 global_vars["humidity"] = humidity
