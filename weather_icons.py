@@ -21,7 +21,7 @@ def init_icon():
 sun_icon = None
 
 
-def draw_sun(canvas, rows, cols):
+def draw_sun(canvas):
     """Draw a sun icon on the given canvas."""
     global sun_icon
     if sun_icon is None:
@@ -61,7 +61,7 @@ def create_sun_icon():
 cloud_icon = None
 
 
-def draw_cloud(canvas, rows, cols):
+def draw_cloud(canvas):
     """Draw a cloud icon on the given canvas."""
     global cloud_icon
     if cloud_icon is None:
@@ -73,6 +73,21 @@ def create_cloud_icon():
     icon_image = init_icon()
     draw_icon = ImageDraw.Draw(icon_image)
     cloud_color = (255, 255, 255)
+    sun_color = (255, 200, 0)  # A warm yellow for the sun
+
+    # Sun parts (a circle peeping out from behind the cloud)
+    sun_center = (4, 4)
+    sun_radius = 4
+
+    # Drawing the sun behind the cloud
+    # Calculate the bounding box for the sun
+    sun_bbox = [
+        sun_center[0] - sun_radius, sun_center[1] - sun_radius,
+        sun_center[0] + sun_radius, sun_center[1] + sun_radius
+    ]
+    draw_icon.ellipse(sun_bbox, fill=sun_color, outline=sun_color)
+
+    # Cloud parts
     cloud_parts = [
         (3, 5, 7, 9),  # Smaller ellipse on the left top
         (5, 3, 11, 9),  # Large middle top ellipse
@@ -82,13 +97,14 @@ def create_cloud_icon():
     ]
     for part in cloud_parts:
         draw_icon.ellipse(part, fill=cloud_color, outline=cloud_color)
+
     return icon_image
 
 
 snow_icon = None
 
 
-def draw_snow(canvas, rows, cols):
+def draw_snow(canvas):
     """Draw a snow icon on the given canvas."""
     global snow_icon
     if snow_icon is None:
@@ -147,7 +163,7 @@ def create_snow_icon():
 thunderstorm_icon = None
 
 
-def draw_thunderstorm(canvas, rows, cols):
+def draw_thunderstorm(canvas):
     """Draw a thunderstorm icon on the given canvas."""
     global thunderstorm_icon
     if thunderstorm_icon is None:
@@ -192,7 +208,7 @@ def create_thunderstorm_icon():
 rain_icon = None
 
 
-def draw_rain(canvas, rows, cols):
+def draw_rain(canvas):
     """Draw a rain icon on the given canvas."""
     global rain_icon
     if rain_icon is None:
@@ -241,7 +257,7 @@ def create_rain_icon():
 fog_icon = None
 
 
-def draw_fog(canvas, rows, cols):
+def draw_fog(canvas):
     """Draw a fog icon on the given canvas."""
     global fog_icon
     if fog_icon is None:
