@@ -206,38 +206,22 @@ def draw_rain(canvas):
 def create_rain_icon():
     icon_image = init_icon()
     draw_icon = ImageDraw.Draw(icon_image)
-    cloud_color = (128, 128, 123)
     rain_color = (173, 216, 230)  # Light blue for rain
 
-    # Adjusted cloud parts for a more rounded appearance
-    cloud_parts = [
-        (3, 5, 7, 9),  # Smaller ellipse on the left top
-        (5, 3, 11, 9),  # Large middle top ellipse
-        (9, 5, 13, 9),  # Smaller ellipse on the right top
-        (2, 7, 12, 12),  # Large bottom ellipse to round off the bottom
-        (10, 7, 14, 11),  # Small ellipse on the right to extend the cloud
+    # Define teardrop-shaped raindrops with the taper at the top, moved to the left by 5 pixels
+    raindrops = [
+        # Raindrop 1, moved right by 1 pixel
+        [(2, 2), (0, 6), (1, 7), (3, 7), (4, 6), (2, 2)],
+        # Raindrop 2, narrowed by 1 column
+        [(6, 1), (5, 5), (5, 6), (7, 6), (7, 5), (6, 1)],
+        [(11, 2), (9, 6), (10, 7), (12, 7), (13, 6), (11, 2)],  # Raindrop 3
+        # Uncomment the next line for a fourth raindrop, if desired
+        # [(15, 1), (13, 5), (14, 6), (16, 6), (17, 5), (15, 1)],  # Raindrop 4
     ]
 
-    # Draw cloud parts
-    for part in cloud_parts:
-        draw_icon.ellipse(part, fill=cloud_color, outline=cloud_color)
-
-    # More pronounced rain lines
-    rain_lines = [
-        (4, 12, 6, 17),
-        (7, 12, 9, 17),
-        (10, 12, 12, 17),
-        (13, 12, 15, 17),
-        # Adding more rain lines for a denser appearance
-        (6, 10, 8, 15),
-        (9, 10, 11, 15),
-        (12, 10, 14, 15),
-    ]
-
-    # Draw rain lines with increased thickness
-    for line in rain_lines:
-        # Increase line width for thicker raindrops
-        draw_icon.line(line, fill=rain_color, width=2)
+    # Draw each teardrop-shaped raindrop
+    for raindrop in raindrops:
+        draw_icon.polygon(raindrop, fill=rain_color, outline=rain_color)
 
     return icon_image
 
