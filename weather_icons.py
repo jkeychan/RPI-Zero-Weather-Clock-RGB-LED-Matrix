@@ -7,21 +7,26 @@ ICON_SIZE = 14
 ICON_POSITION_X = 50
 ICON_POSITION_Y = 20
 
+icons = {
+    "sun": None,
+    "cloud": None,
+    "snow": None,
+    "thunderstorm": None,
+    "rain": None,
+    "fog": None,
+}
+
 
 def init_icon():
     """Initialize a blank icon image of fixed size."""
     return Image.new("RGB", (ICON_SIZE, ICON_SIZE))
 
 
-sun_icon = None
-
-
 def draw_sun(canvas):
     """Draw a sun icon on the given canvas."""
-    global sun_icon
-    if sun_icon is None:
-        sun_icon = create_sun_icon()
-    canvas.SetImage(sun_icon, ICON_POSITION_X, ICON_POSITION_Y)
+    if icons["sun"] is None:
+        icons["sun"] = create_sun_icon()
+    canvas.SetImage(icons["sun"], ICON_POSITION_X, ICON_POSITION_Y)
 
 
 def create_sun_icon():
@@ -53,15 +58,11 @@ def create_sun_icon():
     return icon_image
 
 
-cloud_icon = None
-
-
 def draw_cloud(canvas):
     """Draw a cloud icon on the given canvas."""
-    global cloud_icon
-    if cloud_icon is None:
-        cloud_icon = create_cloud_icon()
-    canvas.SetImage(cloud_icon, ICON_POSITION_X, ICON_POSITION_Y)
+    if icons["cloud"] is None:
+        icons["cloud"] = create_cloud_icon()
+    canvas.SetImage(icons["cloud"], ICON_POSITION_X, ICON_POSITION_Y)
 
 
 def create_cloud_icon():
@@ -96,15 +97,12 @@ def create_cloud_icon():
     return icon_image
 
 
-snow_icon = None
-
-
 def draw_snow(canvas):
     """Draw a snow icon on the given canvas."""
     global snow_icon
     if snow_icon is None:
         snow_icon = create_snow_icon()
-    canvas.SetImage(snow_icon, ICON_POSITION_X, ICON_POSITION_Y)
+    canvas.SetImage(icons["snow_icon"], ICON_POSITION_X, ICON_POSITION_Y)
 
 
 def draw_radial_snowflake(draw, center, radius=3, num_rays=8, color=(173, 216, 230)):
@@ -155,15 +153,13 @@ def create_snow_icon():
     return icon_image
 
 
-thunderstorm_icon = None
-
-
 def draw_thunderstorm(canvas):
     """Draw a thunderstorm icon on the given canvas."""
     global thunderstorm_icon
     if thunderstorm_icon is None:
         thunderstorm_icon = create_thunderstorm_icon()
-    canvas.SetImage(thunderstorm_icon, ICON_POSITION_X, ICON_POSITION_Y)
+    canvas.SetImage(icons["thunderstorm_icon"],
+                    ICON_POSITION_X, ICON_POSITION_Y)
 
 
 def create_thunderstorm_icon():
@@ -200,15 +196,12 @@ def create_thunderstorm_icon():
     return icon_image
 
 
-rain_icon = None
-
-
 def draw_rain(canvas):
     """Draw a rain icon on the given canvas."""
     global rain_icon
     if rain_icon is None:
         rain_icon = create_rain_icon()
-    canvas.SetImage(rain_icon, ICON_POSITION_X, ICON_POSITION_Y)
+    canvas.SetImage(icons["rain_icon"], ICON_POSITION_X, ICON_POSITION_Y)
 
 
 def create_rain_icon():
@@ -250,15 +243,12 @@ def create_rain_icon():
     return icon_image
 
 
-fog_icon = None
-
-
 def draw_fog(canvas):
     """Draw a fog icon on the given canvas."""
     global fog_icon
     if fog_icon is None:
         fog_icon = create_fog_icon()
-    canvas.SetImage(fog_icon, ICON_POSITION_X, ICON_POSITION_Y)
+    canvas.SetImage(icons["fog_icon"], ICON_POSITION_X, ICON_POSITION_Y)
 
 
 def create_fog_icon():
