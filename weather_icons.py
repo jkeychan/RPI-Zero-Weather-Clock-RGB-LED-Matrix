@@ -3,14 +3,9 @@ import math
 
 # Global constants
 # Ideal for 5x7 font size
-ICON_SIZE = 15
-# ICON_POSITION_X = 44
-# ICON_POSITION_Y = 20
-
-
-# Test Position at 5
-ICON_POSITION_X = 5
-ICON_POSITION_Y = 5
+ICON_SIZE = 14
+ICON_POSITION_X = 44
+ICON_POSITION_Y = 20
 
 
 def init_icon():
@@ -21,7 +16,7 @@ def init_icon():
 sun_icon = None
 
 
-def draw_sun(canvas):
+def draw_sun(canvas, rows, cols):
     """Draw a sun icon on the given canvas."""
     global sun_icon
     if sun_icon is None:
@@ -61,7 +56,7 @@ def create_sun_icon():
 cloud_icon = None
 
 
-def draw_cloud(canvas):
+def draw_cloud(canvas, rows, cols):
     """Draw a cloud icon on the given canvas."""
     global cloud_icon
     if cloud_icon is None:
@@ -76,7 +71,7 @@ def create_cloud_icon():
     sun_color = (255, 200, 0)  # A warm yellow for the sun
 
     # Sun parts (a circle peeping out from behind the cloud)
-    sun_center = (4, 4)
+    sun_center = (4, 4)  # Adjust as necessary for the sun's position
     sun_radius = 2
 
     # Drawing the sun behind the cloud
@@ -104,7 +99,7 @@ def create_cloud_icon():
 snow_icon = None
 
 
-def draw_snow(canvas):
+def draw_snow(canvas, rows, cols):
     """Draw a snow icon on the given canvas."""
     global snow_icon
     if snow_icon is None:
@@ -163,7 +158,7 @@ def create_snow_icon():
 thunderstorm_icon = None
 
 
-def draw_thunderstorm(canvas):
+def draw_thunderstorm(canvas, rows, cols):
     """Draw a thunderstorm icon on the given canvas."""
     global thunderstorm_icon
     if thunderstorm_icon is None:
@@ -208,7 +203,7 @@ def create_thunderstorm_icon():
 rain_icon = None
 
 
-def draw_rain(canvas):
+def draw_rain(canvas, rows, cols):
     """Draw a rain icon on the given canvas."""
     global rain_icon
     if rain_icon is None:
@@ -247,6 +242,7 @@ def create_rain_icon():
         (12, 10, 14, 15),
     ]
 
+    # Draw rain lines with increased thickness
     for line in rain_lines:
         # Increase line width for thicker raindrops
         draw_icon.line(line, fill=rain_color, width=2)
@@ -257,7 +253,7 @@ def create_rain_icon():
 fog_icon = None
 
 
-def draw_fog(canvas):
+def draw_fog(canvas, rows, cols):
     """Draw a fog icon on the given canvas."""
     global fog_icon
     if fog_icon is None:
@@ -286,5 +282,9 @@ def create_fog_icon():
     # Draw the fog lines
     for line in fog_lines:
         draw_icon.line(line, fill=fog_color)
+
+    # Optionally, add a subtle gradient effect by overlaying semi-transparent lines
+    # This step is more complex and might not be visible on all displays, especially LED matrices
+    # If your display supports it, consider adding semi-transparent white lines here
 
     return icon_image
