@@ -1,3 +1,5 @@
+# config_loader.py
+
 import configparser
 import csv
 import logging
@@ -8,14 +10,9 @@ import os
 CONFIG_FILE = 'config.ini'
 
 
-# In config_loader.py
-
 class AppConfig:
     def __init__(self):
-        # Assuming this function returns a ConfigParser object that reads your configuration file.
         config = load_config()
-
-        # Existing settings
         self.api_key = config['Weather']['api_key']
         self.zip_code = config['Weather']['zip_code']
         self.temp_unit = config['Display']['temp_unit']
@@ -25,17 +22,16 @@ class AppConfig:
         self.preferred_server = config['NTP']['preferred_server']
         self.text_cycle_interval = config.getint(
             'Display', 'text_cycle_interval', fallback=10)
-        # Ensure this function is defined and works properly.
         self.colors_map = load_colors_from_csv('colors.csv')
+        self.LANGTONS_ANT_ENABLED = config.getboolean(
+            'Display', 'LANGTONS_ANT_ENABLED', fallback=True)
 
-        # New settings for brightness adjustment
+        # Brightness adjustment
         # We use standard Python data conversion because 'getboolean' and 'getint' belong to ConfigParser, not to the dictionary object.
         self.AUTO_BRIGHTNESS_ADJUST = config.getboolean(
             'Display', 'AUTO_BRIGHTNESS_ADJUST', fallback=True)
         self.MANUAL_BRIGHTNESS = config.getint(
             'Display', 'MANUAL_BRIGHTNESS', fallback=50)
-
-      # You can also add utility methods related to configuration here
 
 
 def get_app_config():
