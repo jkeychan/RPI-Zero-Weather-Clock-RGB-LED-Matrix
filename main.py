@@ -49,8 +49,7 @@ class SplitDisplay(SampleBase):
         super(SplitDisplay, self).__init__(*args, **kwargs)
 
         # Call configuration data
-        # self.app_config = app_config
-        self.app_config = get_app_config()
+        self.app_config = app_config
         # Openweathermap "Weather" API
         self.api_endpoint = "https://api.openweathermap.org/data/2.5/weather"
         # Set initial display brightness
@@ -233,8 +232,9 @@ class SplitDisplay(SampleBase):
         logging.info(
             f"Initial brightness set to {self.initial_brightness}% at {datetime.datetime.now().strftime('%H:%M')}")
 
-        langtons_ant = LangtonsAnt(WIDTH - 1, HEIGHT - 1)
-        logging.info(f"Installing Ant at {WIDTH - 1} and {HEIGHT - 1}")
+        if self.app_config.LANGTONS_ANT_ENABLED:
+            langtons_ant = LangtonsAnt(WIDTH - 1, HEIGHT - 1)
+            logging.info(f"Installing Ant at {WIDTH - 1} and {HEIGHT - 1}")
 
         show_main_weather = True
         text_cycle_interval = self.app_config.text_cycle_interval
@@ -243,8 +243,9 @@ class SplitDisplay(SampleBase):
 
         while True:
             offscreen_canvas.Clear()
-            ant_x, ant_y, ant_color = langtons_ant.move()
-            offscreen_canvas.SetPixel(ant_x, ant_y, *ant_color)
+            if self.app_config.LANGTONS_ANT_ENABLED:
+                ant_x, ant_y, ant_color = langtons_ant.move()
+                offscreen_canvas.SetPixel(ant_x, ant_y, *ant_color)
 
             self.adjust_brightness_by_time()
 
