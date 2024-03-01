@@ -197,11 +197,10 @@ def create_thunderstorm_icon():
 
 
 def draw_rain(canvas):
-    """Draw a rain icon on the given canvas."""
-    global rain_icon
-    if rain_icon is None:
-        rain_icon = create_rain_icon()
-    canvas.SetImage(icons["rain_icon"], ICON_POSITION_X, ICON_POSITION_Y)
+    """Draw a cloud icon on the given canvas."""
+    if icons["rain"] is None:
+        icons["rain"] = create_rain_icon()
+    canvas.SetImage(icons["rain"], ICON_POSITION_X, ICON_POSITION_Y)
 
 
 def create_rain_icon():
