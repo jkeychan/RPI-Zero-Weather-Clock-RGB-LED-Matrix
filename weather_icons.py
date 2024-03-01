@@ -16,7 +16,7 @@ def init_icon():
 sun_icon = None
 
 
-def draw_sun(canvas, rows, cols):
+def draw_sun(canvas):
     """Draw a sun icon on the given canvas."""
     global sun_icon
     if sun_icon is None:
@@ -56,7 +56,7 @@ def create_sun_icon():
 cloud_icon = None
 
 
-def draw_cloud(canvas, rows, cols):
+def draw_cloud(canvas):
     """Draw a cloud icon on the given canvas."""
     global cloud_icon
     if cloud_icon is None:
@@ -99,7 +99,7 @@ def create_cloud_icon():
 snow_icon = None
 
 
-def draw_snow(canvas, rows, cols):
+def draw_snow(canvas):
     """Draw a snow icon on the given canvas."""
     global snow_icon
     if snow_icon is None:
@@ -158,7 +158,7 @@ def create_snow_icon():
 thunderstorm_icon = None
 
 
-def draw_thunderstorm(canvas, rows, cols):
+def draw_thunderstorm(canvas):
     """Draw a thunderstorm icon on the given canvas."""
     global thunderstorm_icon
     if thunderstorm_icon is None:
@@ -203,7 +203,7 @@ def create_thunderstorm_icon():
 rain_icon = None
 
 
-def draw_rain(canvas, rows, cols):
+def draw_rain(canvas):
     """Draw a rain icon on the given canvas."""
     global rain_icon
     if rain_icon is None:
@@ -253,7 +253,7 @@ def create_rain_icon():
 fog_icon = None
 
 
-def draw_fog(canvas, rows, cols):
+def draw_fog(canvas):
     """Draw a fog icon on the given canvas."""
     global fog_icon
     if fog_icon is None:

@@ -158,15 +158,15 @@ class SplitDisplay(SampleBase):
             None
         """
         if main_weather == 'Clear':
-            weather_icons.draw_sun(self.matrix, HEIGHT, WIDTH)
+            weather_icons.draw_sun(self.matrix)
         elif main_weather == 'Clouds':
-            weather_icons.draw_cloud(self.matrix, HEIGHT, WIDTH)
+            weather_icons.draw_cloud(self.matrix)
         elif main_weather == 'Rain':
-            weather_icons.draw_rain(self.matrix, HEIGHT, WIDTH)
+            weather_icons.draw_rain(self.matrix)
         elif main_weather == 'Snow':
-            weather_icons.draw_snow(self.matrix, HEIGHT, WIDTH)
+            weather_icons.draw_snow(self.matrix)
         elif main_weather == 'Thunderstorm':
-            weather_icons.draw_thunderstorm(self.matrix, HEIGHT, WIDTH)
+            weather_icons.draw_thunderstorm(self.matrix)
             # Sleep briefly to avoid overloading the CPU
             time.sleep(0.1)
 
