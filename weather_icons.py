@@ -2,9 +2,9 @@ from PIL import Image, ImageDraw
 import math
 
 # Global constants
-# Ideal for 5x7 font size
+# NOTE: Ideal for 5x7 font size, you will need to adjust these parameters for other LED Matrices
 ICON_SIZE = 14
-ICON_POSITION_X = 44
+ICON_POSITION_X = 50
 ICON_POSITION_Y = 20
 
 
