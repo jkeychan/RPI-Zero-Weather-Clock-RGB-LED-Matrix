@@ -184,6 +184,8 @@ class SplitDisplay(SampleBase):
         main_weather_color = graphics.Color(
             *colors_map.get(main_weather.lower(), (255, 255, 255)))
         humidity_color = self.get_humidity_color(humidity)
+        # Dynamic color for date and time
+        dynamic_color = graphics.Color(*get_color_by_time(60))
 
         # Get current time and day
         now = time.localtime()
@@ -192,9 +194,6 @@ class SplitDisplay(SampleBase):
         temperature_str = "{}{}".format(temperature, self.app_config.temp_unit)
         feels_str = "{}".format(feels_like) + "|"
         humidity_str = "{}%".format(humidity)
-
-        # Dynamic color for date and time
-        dynamic_color = graphics.Color(*get_color_by_time(60))
 
         # Drawing text on the canvas
         graphics.DrawText(offscreen_canvas, font, 2,
