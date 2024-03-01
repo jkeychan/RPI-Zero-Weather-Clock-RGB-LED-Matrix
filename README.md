@@ -1,58 +1,110 @@
 # RPI Zero Weather Clock RGB LED Matrix
 
-This project combines hardware interfacing and software development to create a weather clock using a wireless Raspberry Pi Zero and an RGB LED Matrix. The clock not only displays the current time, but also visualizes the weather conditions with the help of weather API data.
+This project transforms a Raspberry Pi Zero into a weather clock, displaying real-time weather conditions and time on an RGB LED Matrix. It fetches weather data from a free online weather API and uses NTP (Network Time Protocol) for accurate timekeeping.
 
 ## Features
 
-- **Time Display:** Shows the current time in a 24-hour format.
-- **Weather Visualization:** Displays weather conditions using symbols and colors on the RGB LED matrix. (64 x 32 used by default)
-- **Auto-Update:** Automatically updates the weather information at configurable intervals.
-- **Customizable Display:** Offers options to customize the display according to user preferences.
+- **Accurate Time Display:** Utilizes NTP to ensure the clock displays the correct time, automatically adjusting for time zone differences and daylight saving time.
+- **Live Weather Updates:** Shows current weather conditions with intuitive icons and colors, updated in real-time from OpenWeatherMap's API.
+- **Adaptive Brightness:** Features automatic brightness adjustment based on the time of day, enhancing visibility and comfort.
+- **Customizable Display:** Allows for extensive customization, including temperature units, text colors, and enabling/disabling the Langton's Ant animation for dynamic background activity.
 
 ## Getting Started
 
 ### Prerequisites
 
-- Raspberry Pi Zero W
-- RGB LED Matrix Panel (64x32 is great but you can run at different sizes and display pitches)
-- Power Supply for Raspberry Pi and LED Matrix
-- Internet Connection
+- Raspberry Pi Zero W [with WiFi setup and SSH access ready (headless ok)](https://www.raspberrypi.com/news/raspberry-pi-imager-imaging-utility/)
+  - [Adafruit RGB Matrix Bonnet for Raspberry Pi](https://www.adafruit.com/product/3211)
+  - [Bonnet Installation Instructions](https://learn.adafruit.com/adafruit-rgb-matrix-bonnet-for-raspberry-pi/)
+- [RGB LED Matrix Panel](https://www.adafruit.com/search?q=RGB+LED+Matrix+Panel) (64 x 32 recommended).
+- [Power Supplies](https://www.adafruit.com/product/1466) for both Raspberry Pi + Bonnet and LED Matrix.
+- [OpenWeatherMap](https://openweathermap.org/api) API key. You can use another weather API but the parsing and configuration for this project is for the Openweathermap ["current weather API" version 2.5](https://openweathermap.org/current#one)
+- Active Internet Connection for NTP synchronization and weather updates.
 
 ### Hardware Setup
 
-1. Connect your RGB LED Matrix to the Raspberry Pi Zero using the appropriate connector like a bonnet or other interface: [Adafruit Tutorials]
-2. Ensure your Raspberry Pi Zero is powered correctly and has an active internet connection for weather updates.
+- **Matrix Connection:** Attach the RGB LED Matrix to the Raspberry Pi Zero using a compatible HAT or bonnet. For a step-by-step guide, see [Adafruit's LED Matrix tutorial](https://learn.adafruit.com/adafruit-rgb-matrix-bonnet-for-raspberry-pi).
 
+
+- **Power Requirements:** Ensure both the Raspberry Pi Zero and the LED Matrix have an adequate power supply. It's crucial for stable operation and to prevent damage.
+- **LED Display**: Connect Raspberry Pi with attached bonnet to the back of the LED Matrix panel using the ribbon cable and power cables.
 ### Software Setup
 
-1. **Clone the Repository**
+1. **Clone the Repository:**
+
+    ```bash
+    git clone https://github.com/yourusername/RPI-Zero-Weather-Clock-RGB-LED-Matrix.git
+    cd RPI-Zero-Weather-Clock-RGB-LED-Matrix
+    ```
+
+2. **Install Dependencies:**
+
+    ```bash
+    sudo apt-get update ; sudo apt-get install -y python3-pip
+    pip3 install -r requirements.txt
+    ```
+
+3. **Configuration:**
+
+    Rename `sample-config.ini` to `config.ini` and edit it to configure your weather clock.
+
+    ```bash
+    mv sample-config.ini config.ini
+    vi config.ini
+    ```
+
+    Fill in the following details in `config.ini`:
+
+    - `[Weather]`
+      - `api_key`: Your OpenWeatherMap API key. 
+      - `zip_code`: Your local ZIP code for weather updates. [OpenWeatherMap Current Weather](https://openweathermap.org/current#zip).
+    - `[Display]`
+      - Adjust display settings like `time_format`, `temp_unit` (Fahrenheit or Celsius), `TEXT_COLOR`, and brightness levels.
+      - `LANGTONS_ANT_ENABLED`: Set to `True` to enable the [Langton's Ant](https://en.wikipedia.org/wiki/Langton%27s_ant) animation or `False` to disable it.
+    - `[NTP]`
+      - `preferred_server`: The NTP server used for time synchronization. `pool.ntp.org` is a reliable choice ([NTP Pool Project](https://www.ntppool.org/en/))
+
+4. **Run the Application: (sudo required for display stability)**
+
+    ```bash
+    sudo python3 main.py
+    ```
+
+### Connectivity
+
+- **Weather Updates:** Fetches the latest weather data from OpenWeatherMap every 10 minutes to display current conditions accurately.
+- **NTP Synchronization:** Ensures the time displayed is precise by syncing with global NTP servers. This is vital for maintaining accurate time without manual adjustments, especially important for applications like clocks where precision is key.
+
+## Usage
+
+After setup, the device will display the current time and weather information. You can customize the display and update intervals by modifying the `config.ini` file, tailoring the weather clock to your preferences. You can also find the logs from the program at `/var/log/rgb/app.log` for troubleshooting purposes.
+
+For running permanently as a display you will want the program to run every time it is power cycled. It is strongly [recommended to create](https://www.fosslinux.com/111815/a-guide-to-creating-linux-services-with-systemd.htm) a `systemd` service for the program to ensure it stays running.
 
 ```bash
-git clone https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix.git
-cd RPI-Zero-Weather-Clock-RGB-LED-Matrix
+# /etc/systemd/system/rgb_display.service
+
+[Unit]
+Description=RGB Display Service
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python /opt/RGB-Display/main.py --led-cols=64 --led-rows=32
+WorkingDirectory=/home/$USER/RPI-Zero-Weather-Clock-RGB-LED-Matrix
+StandardOutput=append:/var/log/rgb-matrix.log
+StandardError=append:/var/log/rgb-matrix.log
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
 ```
-2. **Install Dependencies**
-```bash
-sudo apt-get update
-sudo apt-get install -y python3-pip
-pip3 install -r requirements.txt
-```
+## License
 
-3. **Configuration**
-   Edit the config.json file to set your location, API key, and any other preferences related to the weather display.
-
-
-4. **Running the Project**
-```bash
-python3 weather_clock.py
-```
-
-### Usage
-After the initial setup, the device will start displaying the current time and weather updates. You can further customize the display settings and update intervals by modifying the config.json file.
-
-### License
-This project is licensed under the [GPL 3.0](https://www.gnu.org/licenses/gpl-3.0.en.html) License - see the LICENSE file for details.
+This project is licensed under the GPL 3.0 License - see the LICENSE file for details.
 
 ## Acknowledgments
-Weather data provided by [OpenWeatherMap](https://openweathermap.org/api)
-Inspiration from [Raspberry Pi community](https://www.raspberrypi.org/) projects
+
+- Weather data is provided by [OpenWeatherMap](https://openweathermap.org/api).
+- Inspired by projects from the [Raspberry Pi community](https://www.raspberrypi.org/).
+- [Adafruit](https://learn.adafruit.com/)
