@@ -1,3 +1,5 @@
+![photo of the RPI Zero Weather Clock RGB LED Matrix in action](https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix/blob/main/sample-photo.jpg)
+
 # RPI Zero Weather Clock RGB LED Matrix
 
 This project transforms a Raspberry Pi Zero into a weather clock, displaying real-time weather conditions and time on an RGB LED Matrix. It fetches weather data from a free online weather API and uses NTP (Network Time Protocol) for accurate timekeeping.
