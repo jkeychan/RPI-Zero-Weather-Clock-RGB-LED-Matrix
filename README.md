@@ -45,6 +45,9 @@ This project transforms a Raspberry Pi Zero into a weather clock, displaying rea
     ```bash
     sudo apt-get update ; sudo apt-get install -y git python3-pip
     pip3 install -r requirements.txt
+    git clone https://github.com/hzeller/rpi-rgb-led-matrix.git
+    cd rpi-rgb-led-matrix
+    sudo make install-python
     ```
 
 3. **Configuration:**
