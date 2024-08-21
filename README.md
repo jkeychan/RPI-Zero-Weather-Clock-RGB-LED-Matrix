@@ -45,9 +45,11 @@ This project transforms a Raspberry Pi Zero into a weather clock, displaying rea
     ```bash
     sudo apt-get update ; sudo apt-get install -y git python3-pip
     pip3 install -r requirements.txt
-    git clone https://github.com/hzeller/rpi-rgb-led-matrix.git
-    cd rpi-rgb-led-matrix
+    
+    cd matrix
+    sudo make build-python
     sudo make install-python
+
     ```
 
 3. **Configuration:**
@@ -59,18 +61,47 @@ This project transforms a Raspberry Pi Zero into a weather clock, displaying rea
     vi config.ini
     ```
 
-    Fill in the following details in `config.ini`:
+    Update `config.ini`:
 
-    - `[Weather]`
-      - `api_key`: Your OpenWeatherMap API key. 
-      - `zip_code`: Your local ZIP code for weather updates. [OpenWeatherMap Current Weather](https://openweathermap.org/current#zip).
-    - `[Display]`
-      - Adjust display settings like `time_format`, `temp_unit` (Fahrenheit or Celsius), `TEXT_COLOR`, and brightness levels.
-      - `LANGTONS_ANT_ENABLED`: Set to `True` to enable the [Langton's Ant](https://en.wikipedia.org/wiki/Langton%27s_ant) animation or `False` to disable it.
-    - `[NTP]`
-      - `preferred_server`: The NTP server used for time synchronization. `pool.ntp.org` is a reliable choice ([NTP Pool Project](https://www.ntppool.org/en/))
+    ```
+    # sample-config.ini file
+    # Make any relevant adjustments and then save as config.ini
 
-4. **Run the Application: (sudo required for display stability)**
+    [Weather]
+    api_key = YOUR_OPENWEATHERMAP_API_KEY # https://openweathermap.org/api
+    zip_code = YOUR_ZIP_CODE # https://openweathermap.org/current#zip
+
+    [Display]
+    time_format = 24
+    temp_unit = F
+    text_cycle_interval = 10
+    FONT_PATH=fonts/5x7.bdf
+    FONT_SIZE=10
+    TEXT_COLOR=white
+    AUTO_BRIGHTNESS_ADJUST = True
+    BRIGHTNESS = 20
+    NIGHT_START = 23:00
+    NIGHT_END = 06:00
+    DAY_BRIGHTNESS = 60
+    NIGHT_BRIGHTNESS = 10
+    LANGTONS_ANT_ENABLED = True
+
+    [NTP]
+    preferred_server = pool.ntp.org
+    ```
+
+  The most important and common configuration settings should be adjusted to your preferences:
+
+ - `[Weather]`
+   - `api_key`: Your OpenWeatherMap API key. 
+   - `zip_code`: Your local ZIP code for weather updates. [OpenWeatherMap Current Weather](https://openweathermap.org/current#zip).
+ - `[Display]`
+   - Adjust display settings like `time_format`, `temp_unit` (Fahrenheit or Celsius), `TEXT_COLOR`, and brightness levels.
+   - `LANGTONS_ANT_ENABLED`: Set to `True` to enable the [Langton's Ant](https://en.wikipedia.org/wiki/Langton%27s_ant) animation or `False` to disable it.
+ - `[NTP]`
+   - `preferred_server`: The NTP server used for time synchronization. `pool.ntp.org` is a reliable choice ([NTP Pool Project](https://www.ntppool.org/en/))
+
+4. **Run the Application: (sudo required for [display stability]())**
 
     ```bash
     sudo python3 main.py
