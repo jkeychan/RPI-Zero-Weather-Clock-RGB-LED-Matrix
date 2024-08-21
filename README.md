@@ -19,7 +19,6 @@ This project transforms a Raspberry Pi Zero into a weather clock, displaying rea
   - [Adafruit RGB Matrix Bonnet for Raspberry Pi](https://www.adafruit.com/product/3211)
   - [Bonnet Installation Instructions](https://learn.adafruit.com/adafruit-rgb-matrix-bonnet-for-raspberry-pi/)
 - [RGB LED Matrix Panel](https://www.adafruit.com/search?q=RGB+LED+Matrix+Panel) (64 x 32 recommended).
-- [RGB LED Matrix Python Libraries](https://github.com/hzeller/rpi-rgb-led-matrix/tree/master)
 - [Power Supplies](https://www.adafruit.com/product/1466) for both Raspberry Pi + Bonnet and LED Matrix.
 - [OpenWeatherMap](https://openweathermap.org/api) API key. You can use another weather API but the parsing and configuration for this project is for the Openweathermap ["current weather API" version 2.5](https://openweathermap.org/current#one)
 - Active Internet Connection for NTP synchronization and weather updates.
@@ -45,7 +44,7 @@ This project transforms a Raspberry Pi Zero into a weather clock, displaying rea
     ```bash
     sudo apt-get update ; sudo apt-get install -y git python3-pip
     pip3 install -r requirements.txt
-    
+
     cd matrix
     sudo make build-python
     sudo make install-python
