@@ -3,6 +3,7 @@
 import configparser
 import csv
 import logging
+import logging.handlers
 import threading
 import errno
 import os
@@ -41,6 +42,7 @@ def get_app_config():
 def setup_logging():
     log_directory = '/var/log/rgb'
     log_file = 'app.log'
+    log_path = os.path.join(log_directory, log_file)
 
     # Create target Directory if it doesn't exist
     if not os.path.exists(log_directory):
@@ -61,9 +63,21 @@ def setup_logging():
         print("Please make sure you have the right permissions.")
         return
 
-    log_path = os.path.join(log_directory, log_file)
-    logging.basicConfig(filename=log_path, filemode='a',
-                        format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
+    # Setup rotating log handler
+    handler = logging.handlers.RotatingFileHandler(
+        log_path, maxBytes=10*1024*1024, backupCount=5)  # 10 MB per file, keep 5 backups
+
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    logger.addHandler(handler)
+
+    # Also log to the console (optional)
+    # console_handler = logging.StreamHandler()
+    # console_handler.setFormatter(formatter)
+    # logger.addHandler(console_handler)
 
 
 def load_config():
