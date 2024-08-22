@@ -77,47 +77,45 @@ class SplitDisplay(SampleBase):
             logging.error(f"Failed to get NTP time: {e}")
             return None
 
-    def adjust_brightness_by_time(self):
-        # Try to get NTP time, if not then use local system time
-        if self.ntp_time_offset is not None:
-            # Use the NTP time adjusted by the previously calculated offset
-            now = datetime.datetime.now() + self.ntp_time_offset
-        else:
-            # Fall back to system time if NTP time was not available
-            now = datetime.datetime.now()
-         # If auto-adjust is turned off, use the manual brightness from the config
+    def adjust_brightness_by_time(self, test_time=None):
+        now = test_time or (datetime.datetime.now(
+        ) + self.ntp_time_offset if self.ntp_time_offset else datetime.datetime.now())
+
         if not self.app_config.AUTO_BRIGHTNESS_ADJUST:
             manual_brightness = self.app_config.BRIGHTNESS
             self.matrix.brightness = manual_brightness
             logging.info(
                 f"Manual brightness set to {manual_brightness}% at {datetime.datetime.now().strftime('%H:%M')}")
-            return  # Early return if auto-adjust is off
+            return
 
-        # Safely get the value, defaulting to None if it's not there.
         sunrise = global_vars.get("sunrise")
         sunset = global_vars.get("sunset")
         if sunrise is None or sunset is None:
             print("Sunrise or sunset data is not available yet. Skipping this iteration.")
-            time.sleep(2)  # Wait before trying again
+            time.sleep(2)
             return
 
-        # Convert sunrise and sunset from UTC to local time
         sunrise_time = datetime.datetime.fromtimestamp(sunrise)
         sunset_time = datetime.datetime.fromtimestamp(sunset)
 
-        # Define time periods for different brightness levels
-        one_am = now.replace(hour=1, minute=0, second=0, microsecond=0)
-        nine_am = now.replace(hour=9, minute=0, second=0, microsecond=0)
+        noon_time = sunrise_time + (sunset_time - sunrise_time) / 2
 
-        # Adjust brightness of display based on the current time
-        if one_am <= now < sunrise_time:  # 1am to sunrise
-            self.matrix.brightness = 10  # 10% brightness
-        elif sunrise_time <= now < nine_am:  # Sunrise to 9am
-            self.matrix.brightness = 20  # 20% brightness
-        elif nine_am <= now < sunset_time:  # 9am to sunset
-            self.matrix.brightness = 60  # 60% brightness
-        elif sunset_time <= now or now < one_am:  # Sunset to 1am
-            self.matrix.brightness = 20  # 20% brightness
+        if now < sunrise_time:
+            brightness = 20  # Before sunrise: 20% brightness
+        elif now < noon_time:
+            # Brightness increases from 20% at sunrise to 60% at noon
+            brightness = 20 + (40 * (now - sunrise_time).total_seconds() /
+                               (noon_time - sunrise_time).total_seconds())
+        elif now < sunset_time:
+            # Brightness decreases from 60% at noon to 20% at sunset
+            brightness = 60 - (40 * (now - noon_time).total_seconds() /
+                               (sunset_time - noon_time).total_seconds())
+        else:
+            brightness = 20  # After sunset: 20% brightness
+
+        # Ensure brightness is within bounds (just in case of rounding errors)
+        brightness = max(20, min(60, brightness))
+        self.matrix.brightness = int(brightness)
 
     def get_humidity_color(self, humidity):
         """
