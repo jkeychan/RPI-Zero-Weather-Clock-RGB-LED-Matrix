@@ -78,11 +78,7 @@ This project transforms a Raspberry Pi Zero into a weather clock, displaying rea
     FONT_SIZE=10
     TEXT_COLOR=white
     AUTO_BRIGHTNESS_ADJUST = True # Set as False to manually set the value (percentage) in BRIGHTNESS
-    BRIGHTNESS = 20
-    NIGHT_START = 23:00
-    NIGHT_END = 06:00
-    DAY_BRIGHTNESS = 60
-    NIGHT_BRIGHTNESS = 10
+    BRIGHTNESS = 20 # Percentage
     LANGTONS_ANT_ENABLED = True
 
     [NTP]
