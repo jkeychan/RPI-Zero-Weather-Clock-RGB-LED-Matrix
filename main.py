@@ -87,7 +87,7 @@ class SplitDisplay(SampleBase):
             now = datetime.datetime.now()
          # If auto-adjust is turned off, use the manual brightness from the config
         if not self.app_config.AUTO_BRIGHTNESS_ADJUST:
-            manual_brightness = self.app_config.MANUAL_BRIGHTNESS
+            manual_brightness = self.app_config.BRIGHTNESS
             self.matrix.brightness = manual_brightness
             logging.info(
                 f"Manual brightness set to {manual_brightness}% at {datetime.datetime.now().strftime('%H:%M')}")
