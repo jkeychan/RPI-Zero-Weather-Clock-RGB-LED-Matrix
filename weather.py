@@ -3,7 +3,6 @@ import time
 import datetime
 import threading
 import logging
-from config_loader import load_config
 from typing import Tuple, Optional, Dict, Any
 
 

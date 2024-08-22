@@ -3,7 +3,7 @@ import datetime
 import logging
 from rgbmatrix import graphics
 import weather_icons
-from config_loader import setup_logging, initialize_global_vars, get_app_config, load_config
+from config_loader import setup_logging, initialize_global_vars, get_app_config
 from weather import start_weather_thread
 from utils import get_temp_color, get_color_by_time
 from constants import TEMP_COLORS, WIDTH, HEIGHT
@@ -14,7 +14,6 @@ from time import ctime
 
 setup_logging()
 app_config = get_app_config()
-config = load_config()
 global_vars = initialize_global_vars()
 colors_map = app_config.colors_map
 start_weather_thread(global_vars, app_config.api_key,
@@ -22,9 +21,10 @@ start_weather_thread(global_vars, app_config.api_key,
 
 # Setting the default text color
 try:
-    TEXT_COLOR = tuple(map(int, config['Display']['TEXT_COLOR'].split(',')))
+    TEXT_COLOR = tuple(
+        map(int, app_config.config['Display']['TEXT_COLOR'].split(',')))
 except ValueError:
-    color_name = config['Display']['TEXT_COLOR'].lower()
+    color_name = app_config.config['Display']['TEXT_COLOR'].lower()
     if color_name in colors_map:
         TEXT_COLOR = colors_map[color_name]
     else:
