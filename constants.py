@@ -1,6 +1,4 @@
-import os
-import csv
-from typing import List, Tuple, NamedTuple, Dict
+from typing import List, Tuple, NamedTuple
 
 # Define a NamedTuple for temperature color mapping
 
@@ -9,58 +7,55 @@ class TempColorRange(NamedTuple):
     temp_threshold: float
     color: Tuple[int, int, int]
 
-# Load colors from the CSV file
+# Linear interpolation between two RGB colors
 
 
-def load_colors_from_csv(filename: str) -> Dict[str, Tuple[int, int, int]]:
-    colors = {}
-    if not os.path.exists(filename):
-        raise FileNotFoundError(f"Colors CSV file {filename} not found.")
+def interpolate_color(color1: Tuple[int, int, int], color2: Tuple[int, int, int], factor: float) -> Tuple[int, int, int]:
+    return tuple(int(color1[i] + factor * (color2[i] - color1[i])) for i in range(3))
 
-    with open(filename, 'r') as csvfile:
-        csvreader = csv.reader(csvfile)
-        next(csvreader)  # skip header
-        for row in csvreader:
-            color_name = row[0].strip().lower().replace(" ", "_")
-            try:
-                # Properly handle the RGB tuple by joining the split elements and then evaluating the string
-                rgb_values = tuple(map(int, row[1].strip("() ").split(',')))
-                colors[color_name] = rgb_values
-            except ValueError as e:
-                print(f"Error processing row: {row}. Error: {e}")
-                continue  # Skip this row if there's an error
-
-    return colors
+# Generate a smooth gradient between defined color stops
 
 
-# Load colors from the CSV file (update the path if necessary)
-colors_map = load_colors_from_csv('colors.csv')
+def generate_temp_color_gradient(min_temp: int, max_temp: int) -> List[TempColorRange]:
+    gradient_colors = [
+        (0, (0, 0, 255)),       # 0°F -> Blue
+        (50, (0, 255, 255)),    # 50°F -> Cyan
+        (75, (255, 255, 0)),    # 75°F -> Yellow
+        (100, (255, 0, 0))      # 100°F -> Red
+    ]
 
-# Define TEMP_COLORS using the loaded colors
-TEMP_COLORS: List[TempColorRange] = [
-    TempColorRange(0, colors_map['white']),
-    TempColorRange(5, colors_map['purple']),
-    TempColorRange(10, colors_map['indigo']),
-    TempColorRange(15, colors_map['blue']),
-    TempColorRange(20, colors_map['royal_blue']),
-    TempColorRange(25, colors_map['cornflower_blue']),
-    TempColorRange(30, colors_map['light_sky_blue']),
-    TempColorRange(39, colors_map['light_blue']),
-    TempColorRange(40, colors_map['green']),
-    TempColorRange(45, colors_map['forest_green']),
-    TempColorRange(50, colors_map['medium_sea_green']),
-    TempColorRange(55, colors_map['yellow_green']),
-    TempColorRange(60, colors_map['green_yellow']),
-    TempColorRange(65, colors_map['yellow']),
-    TempColorRange(70, colors_map['gold']),
-    TempColorRange(75, colors_map['orange']),
-    TempColorRange(80, colors_map['dark_orange']),
-    TempColorRange(85, colors_map['orange_red']),
-    TempColorRange(90, colors_map['red']),
-    TempColorRange(95, colors_map['orange_red']),
-    TempColorRange(100, colors_map['red']),
-    TempColorRange(float('inf'), colors_map['red']),
-]
+    temp_colors = []
+
+    # Handle temperatures below the minimum (always blue)
+    for temp in range(min_temp, 0):
+        temp_colors.append(TempColorRange(temp, (0, 0, 255)))
+
+    # Handle the gradient from 0 to 100°F
+    num_steps = max_temp - min_temp
+    for i in range(num_steps + 1):
+        temp = min_temp + i
+        # Find the appropriate gradient range
+        for j in range(len(gradient_colors) - 1):
+            temp1, color1 = gradient_colors[j]
+            temp2, color2 = gradient_colors[j + 1]
+            if temp1 <= temp <= temp2:
+                factor = (temp - temp1) / (temp2 - temp1)
+                color = interpolate_color(color1, color2, factor)
+                temp_colors.append(TempColorRange(temp, color))
+                break
+
+    # Handle temperatures above the maximum (always red)
+    for temp in range(max_temp + 1, 150):  # Adjust the upper bound as needed
+        temp_colors.append(TempColorRange(temp, (255, 0, 0)))
+
+    return temp_colors
+
+
+# Generate TEMP_COLORS using the gradient
+min_temp = -30  # Set a minimum temperature well below 0°F
+max_temp = 100  # Maximum temperature in degrees
+TEMP_COLORS: List[TempColorRange] = generate_temp_color_gradient(
+    min_temp, max_temp)
 
 # Width and height for the "ant" animation and for the text matrix
 WIDTH: int = 64
@@ -71,7 +66,12 @@ HEIGHT: int = 32
 
 def get_temp_color(temperature: float) -> Tuple[int, int, int]:
     """Returns the color corresponding to the given temperature."""
+    if temperature < 0:
+        return (0, 0, 255)  # Always return blue for temperatures below 0°F
+    elif temperature > 100:
+        return (255, 0, 0)  # Always return red for temperatures above 100°F
     for temp_color_range in TEMP_COLORS:
         if temperature <= temp_color_range.temp_threshold:
             return temp_color_range.color
-    return colors_map['red']  # Default to RED if no range matches
+    # Default to the highest color if out of range
+    return TEMP_COLORS[-1].color

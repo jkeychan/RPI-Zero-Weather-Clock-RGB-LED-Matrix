@@ -16,7 +16,6 @@ from time import ctime
 setup_logging()
 app_config = get_app_config()
 global_vars = initialize_global_vars()
-colors_map = app_config.colors_map
 
 # Start the weather fetching thread
 start_weather_thread(global_vars, app_config.api_key,
@@ -113,8 +112,9 @@ class SplitDisplay(SampleBase):
 
         temperature_color = graphics.Color(*get_temp_color(temperature))
         feels_like_color = graphics.Color(*get_temp_color(feels_like))
-        main_weather_color = graphics.Color(
-            *colors_map.get(main_weather.lower(), (255, 255, 255)))
+
+        # Set main_weather_color based on the main_weather description or use a default white color
+        main_weather_color = graphics.Color(255, 255, 255)  # Default to white
         humidity_color = self.get_humidity_color(humidity)
         dynamic_color = graphics.Color(*get_color_by_time(60))
 
