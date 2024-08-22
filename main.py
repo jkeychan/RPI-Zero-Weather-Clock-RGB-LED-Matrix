@@ -22,17 +22,6 @@ colors_map = app_config.colors_map
 start_weather_thread(global_vars, app_config.api_key,
                      app_config.zip_code, app_config.temp_unit)
 
-# Set the default text color
-try:
-    TEXT_COLOR = tuple(
-        map(int, app_config.config['Display']['TEXT_COLOR'].split(',')))
-except ValueError:
-    color_name = app_config.config['Display']['TEXT_COLOR'].lower()
-    if color_name in colors_map:
-        TEXT_COLOR = colors_map[color_name]
-    else:
-        raise ValueError(f"Invalid color name: {color_name}")
-
 
 class SplitDisplay(SampleBase):
     def __init__(self, *args, **kwargs):
