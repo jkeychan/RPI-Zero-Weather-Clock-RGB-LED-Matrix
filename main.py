@@ -6,20 +6,23 @@ import weather_icons
 from config_loader import setup_logging, initialize_global_vars, get_app_config
 from weather import start_weather_thread
 from utils import get_temp_color, get_color_by_time
-from constants import TEMP_COLORS, WIDTH, HEIGHT
+from constants import WIDTH, HEIGHT
 from langtons_ant import LangtonsAnt
 from samplebase import SampleBase
 import ntplib
 from time import ctime
 
+# Setup logging and load configuration
 setup_logging()
 app_config = get_app_config()
 global_vars = initialize_global_vars()
 colors_map = app_config.colors_map
+
+# Start the weather fetching thread
 start_weather_thread(global_vars, app_config.api_key,
                      app_config.zip_code, app_config.temp_unit)
 
-# Setting the default text color
+# Set the default text color
 try:
     TEXT_COLOR = tuple(
         map(int, app_config.config['Display']['TEXT_COLOR'].split(',')))
@@ -32,41 +35,22 @@ except ValueError:
 
 
 class SplitDisplay(SampleBase):
-    """
-    A class for displaying weather information and animations on an RGB LED matrix.
-
-    This class extends SampleBase to utilize RGB matrix functionalities, offering
-    features like displaying current weather conditions, temperature, humidity,
-    and a Langton's Ant simulation for dynamic background activity.
-
-    Attributes:
-        app_config (AppConfig): Configuration settings for the application, including API keys and display options.
-    Methods:
-        run(): Main loop for updating and displaying weather data and animations.
-    """
-
     def __init__(self, *args, **kwargs):
         super(SplitDisplay, self).__init__(*args, **kwargs)
-
-        # Call configuration data
         self.app_config = app_config
-        # Openweathermap "Weather" API
         self.api_endpoint = "https://api.openweathermap.org/data/2.5/weather"
-        # Set initial display brightness
         self.initial_brightness = self.app_config.BRIGHTNESS
         logging.info(
             f"Initial brightness set to {self.initial_brightness}% at {datetime.datetime.now().strftime('%H:%M')}")
-        # Fetch NTP time once at initialization
         self.ntp_time = self.get_ntp_time(self.app_config.preferred_server)
         if self.ntp_time is None:
             self.ntp_time_offset = None
             logging.error(
                 "NTP time not available, falling back to system time.")
         else:
-            # Calculate the offset between NTP time and local system time
             self.ntp_time_offset = self.ntp_time - datetime.datetime.now()
             logging.info(
-                f"NTP Time Correctly Fetched! Time: {self.ntp_time}% + Offset: {self.ntp_time_offset} at {datetime.datetime.now().strftime('%H:%M')}")
+                f"NTP Time Correctly Fetched! Time: {self.ntp_time} + Offset: {self.ntp_time_offset} at {datetime.datetime.now().strftime('%H:%M')}")
 
     def get_ntp_time(self, ntp_server):
         try:
@@ -80,7 +64,6 @@ class SplitDisplay(SampleBase):
     def adjust_brightness_by_time(self, test_time=None):
         now = test_time or (datetime.datetime.now(
         ) + self.ntp_time_offset if self.ntp_time_offset else datetime.datetime.now())
-
         if not self.app_config.AUTO_BRIGHTNESS_ADJUST:
             manual_brightness = self.app_config.BRIGHTNESS
             self.matrix.brightness = manual_brightness
@@ -103,34 +86,18 @@ class SplitDisplay(SampleBase):
         if now < sunrise_time:
             brightness = 20  # Before sunrise: 20% brightness
         elif now < noon_time:
-            # Brightness increases from 20% at sunrise to 60% at noon
             brightness = 20 + (40 * (now - sunrise_time).total_seconds() /
                                (noon_time - sunrise_time).total_seconds())
         elif now < sunset_time:
-            # Brightness decreases from 60% at noon to 20% at sunset
             brightness = 60 - (40 * (now - noon_time).total_seconds() /
                                (sunset_time - noon_time).total_seconds())
         else:
             brightness = 20  # After sunset: 20% brightness
 
-        # Ensure brightness is within bounds (just in case of rounding errors)
         brightness = max(20, min(60, brightness))
         self.matrix.brightness = int(brightness)
 
     def get_humidity_color(self, humidity):
-        """
-        Determines the color for displaying humidity based on its value.
-
-        This method returns a color that visually represents the humidity level on the display.
-        Lower humidity levels are represented with a blue color, moderate levels with green,
-        and high levels with orange.
-
-        Parameters:
-            humidity (int): The current humidity level as a percentage.
-
-        Returns:
-            graphics.Color: The color corresponding to the given humidity level.
-        """
         if humidity < 30:
             return graphics.Color(0, 0, 255)  # Blue for low humidity
         elif humidity < 60:
@@ -139,22 +106,6 @@ class SplitDisplay(SampleBase):
             return graphics.Color(255, 69, 0)  # Orange for high humidity
 
     def display_weather_icon(self, main_weather):
-        """
-        Displays an appropriate weather icon on the LED matrix based on the current weather condition.
-
-        This method selects and displays a graphical representation of the current weather condition
-        (e.g., sun for clear skies, clouds, rain, snow, or thunderstorm) on the LED matrix. For
-        certain conditions that might be visually intensive on the display, a brief pause is introduced
-        to mitigate CPU overload.
-
-        Parameters:
-            main_weather (str): A string representing the main weather condition obtained from the
-                                weather API (weather.py). Expected values are 'Clear', 'Clouds', 'Rain',
-                                'Snow', and 'Thunderstorm'.
-
-        Returns:
-            None
-        """
         if main_weather == 'Clear':
             weather_icons.draw_sun(self.matrix)
         elif main_weather == 'Clouds':
@@ -165,27 +116,19 @@ class SplitDisplay(SampleBase):
             weather_icons.draw_snow(self.matrix)
         elif main_weather == 'Thunderstorm':
             weather_icons.draw_thunderstorm(self.matrix)
-            # Sleep briefly to avoid overloading the CPU
             time.sleep(0.1)
 
     def draw_weather_data(self, offscreen_canvas, font, temperature, feels_like, humidity, main_weather, weather_description, show_main_weather, scroll_pos):
-        # Choose what to display based on the toggle state
         weather_text = main_weather if show_main_weather else weather_description
-        # Estimate text length based on average character width
         text_length_est = len(weather_text) * 6
 
-        # Define colors
-        temperature_color = graphics.Color(
-            *get_temp_color(temperature, TEMP_COLORS))
-        feels_like_color = graphics.Color(
-            *get_temp_color(feels_like, TEMP_COLORS))
+        temperature_color = graphics.Color(*get_temp_color(temperature))
+        feels_like_color = graphics.Color(*get_temp_color(feels_like))
         main_weather_color = graphics.Color(
             *colors_map.get(main_weather.lower(), (255, 255, 255)))
         humidity_color = self.get_humidity_color(humidity)
-        # Dynamic color for date and time
         dynamic_color = graphics.Color(*get_color_by_time(60))
 
-        # Get current time and day
         now = time.localtime()
         time_str = time.strftime("%H:%M", now)
         day_str = time.strftime("%a", now)
@@ -193,7 +136,6 @@ class SplitDisplay(SampleBase):
         feels_str = "{}".format(feels_like) + "|"
         humidity_str = "{}%".format(humidity)
 
-        # Drawing text on the canvas
         graphics.DrawText(offscreen_canvas, font, 2,
                           self.app_config.FONT_SIZE, dynamic_color, day_str)
         graphics.DrawText(offscreen_canvas, font, 34,
@@ -205,7 +147,6 @@ class SplitDisplay(SampleBase):
         graphics.DrawText(offscreen_canvas, font, 49,
                           self.app_config.FONT_SIZE * 2, humidity_color, humidity_str)
 
-        # Decide whether to scroll based on estimated text length
         if not show_main_weather and text_length_est > 32:  # Assuming 32 pixels is your width limit
             if scroll_pos + text_length_est < 0:
                 scroll_pos = offscreen_canvas.width  # Reset scroll position
@@ -213,12 +154,11 @@ class SplitDisplay(SampleBase):
                               self.app_config.FONT_SIZE * 3, main_weather_color, weather_text)
             scroll_pos += -1  # Update scroll position for next frame
         else:
-            # Display statically if within limit or showing main weather
             graphics.DrawText(offscreen_canvas, font, 2,
                               self.app_config.FONT_SIZE * 3, main_weather_color, weather_text)
             scroll_pos = offscreen_canvas.width  # Reset for potential future scrolls
 
-        return scroll_pos  # Return updated scroll position for next iteration
+        return scroll_pos
 
     def run(self):
         font = graphics.Font()
@@ -251,7 +191,6 @@ class SplitDisplay(SampleBase):
                 last_switch_time = time.time()
                 scroll_pos = offscreen_canvas.width  # Reset scroll position on toggle
 
-            # Fetch the latest weather data
             temperature = global_vars["temperature"]
             feels_like = global_vars["feels_like"]
             humidity = global_vars["humidity"]
@@ -260,19 +199,16 @@ class SplitDisplay(SampleBase):
 
             if temperature is None or feels_like is None or humidity is None:
                 print("Weather data is not available yet. Skipping this iteration.")
-                time.sleep(2)  # Wait before trying again
+                time.sleep(2)
                 continue
 
-            # Draw weather data and update scroll position
             scroll_pos = self.draw_weather_data(offscreen_canvas, font, temperature, feels_like,
                                                 humidity, main_weather, weather_description, show_main_weather, scroll_pos)
             offscreen_canvas = self.matrix.SwapOnVSync(offscreen_canvas)
-            # Draw weather icon
             self.display_weather_icon(main_weather)
             time.sleep(0.03)
 
 
-# Main execution
 if __name__ == "__main__":
     logging.info("Application started")
     try:
