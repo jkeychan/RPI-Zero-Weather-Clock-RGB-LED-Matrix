@@ -76,14 +76,13 @@ This project transforms a Raspberry Pi Zero into a weather clock, displaying rea
     text_cycle_interval = 10
     FONT_PATH=fonts/5x7.bdf
     FONT_SIZE=10
-    TEXT_COLOR=white
     AUTO_BRIGHTNESS_ADJUST = True # Set as False to manually set the value (percentage) in BRIGHTNESS
     BRIGHTNESS = 20 # Percentage
     LANGTONS_ANT_ENABLED = True
 
     [NTP]
     preferred_server = pool.ntp.org
-    # preferred_server = 127.0.0.1
+    # preferred_server = 127.0.0.1 # If you are running NTP locally
     ```
 
   The most important and common configuration settings should be adjusted to your preferences:
