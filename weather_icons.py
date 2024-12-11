@@ -99,10 +99,9 @@ def create_cloud_icon():
 
 def draw_snow(canvas):
     """Draw a snow icon on the given canvas."""
-    global snow_icon
-    if snow_icon is None:
-        snow_icon = create_snow_icon()
-    canvas.SetImage(icons["snow_icon"], ICON_POSITION_X, ICON_POSITION_Y)
+    if icons["snow"] is None:
+        icons["snow"] = create_snow_icon()
+    canvas.SetImage(icons["snow"], ICON_POSITION_X, ICON_POSITION_Y)
 
 
 def draw_radial_snowflake(draw, center, radius=3, num_rays=8, color=(173, 216, 230)):
