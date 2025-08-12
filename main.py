@@ -26,7 +26,6 @@ class SplitDisplay(SampleBase):
     def __init__(self, *args, **kwargs):
         super(SplitDisplay, self).__init__(*args, **kwargs)
         self.app_config = app_config
-        self.api_endpoint = "https://api.openweathermap.org/data/2.5/weather"
         self.initial_brightness = self.app_config.BRIGHTNESS
         logging.info(
             f"Initial brightness set to {self.initial_brightness}% at {datetime.datetime.now().strftime('%H:%M')}")
@@ -53,7 +52,7 @@ class SplitDisplay(SampleBase):
         now = test_time or (datetime.datetime.now(
         ) + self.ntp_time_offset if self.ntp_time_offset else datetime.datetime.now())
         if not self.app_config.AUTO_BRIGHTNESS_ADJUST:
-            manual_brightness = self.app_config.BRIGHTNESS
+            manual_brightness = self.app_config.MANUAL_BRIGHTNESS
             self.matrix.brightness = manual_brightness
             logging.info(
                 f"Manual brightness set to {manual_brightness}% at {datetime.datetime.now().strftime('%H:%M')}")
@@ -62,7 +61,8 @@ class SplitDisplay(SampleBase):
         sunrise = global_vars.get("sunrise")
         sunset = global_vars.get("sunset")
         if sunrise is None or sunset is None:
-            print("Sunrise or sunset data is not available yet. Skipping this iteration.")
+            logging.info(
+                "Sunrise or sunset data not available yet; skipping brightness adjust.")
             time.sleep(2)
             return
 
@@ -94,17 +94,21 @@ class SplitDisplay(SampleBase):
             return graphics.Color(255, 69, 0)  # Orange for high humidity
 
     def display_weather_icon(self, main_weather):
-        if main_weather == 'Clear':
-            weather_icons.draw_sun(self.matrix)
-        elif main_weather == 'Clouds':
-            weather_icons.draw_cloud(self.matrix)
-        elif main_weather == 'Rain':
-            weather_icons.draw_rain(self.matrix)
-        elif main_weather == 'Snow':
-            weather_icons.draw_snow(self.matrix)
-        elif main_weather == 'Thunderstorm':
-            weather_icons.draw_thunderstorm(self.matrix)
-            time.sleep(0.1)
+        draw_map = {
+            'Clear': weather_icons.draw_sun,
+            'Clouds': weather_icons.draw_cloud,
+            'Rain': weather_icons.draw_rain,
+            'Snow': weather_icons.draw_snow,
+            'Thunderstorm': weather_icons.draw_thunderstorm,
+            'Fog': weather_icons.draw_fog,
+            'Mist': weather_icons.draw_fog,
+            'Haze': weather_icons.draw_fog,
+        }
+        fn = draw_map.get(main_weather)
+        if fn:
+            fn(self.matrix)
+            if main_weather == 'Thunderstorm':
+                time.sleep(0.1)
 
     def draw_weather_data(self, offscreen_canvas, font, temperature, feels_like, humidity, main_weather, weather_description, show_main_weather, scroll_pos):
         weather_text = main_weather if show_main_weather else weather_description
@@ -136,12 +140,12 @@ class SplitDisplay(SampleBase):
         graphics.DrawText(offscreen_canvas, font, 49,
                           self.app_config.FONT_SIZE * 2, humidity_color, humidity_str)
 
-        if not show_main_weather and text_length_est > 32:  # Assuming 32 pixels is your width limit
+        if not show_main_weather and text_length_est > offscreen_canvas.width:
             if scroll_pos + text_length_est < 0:
                 scroll_pos = offscreen_canvas.width  # Reset scroll position
             graphics.DrawText(offscreen_canvas, font, scroll_pos,
                               self.app_config.FONT_SIZE * 3, main_weather_color, weather_text)
-            scroll_pos += -1  # Update scroll position for next frame
+            scroll_pos -= 1  # Update scroll position for next frame
         else:
             graphics.DrawText(offscreen_canvas, font, 2,
                               self.app_config.FONT_SIZE * 3, main_weather_color, weather_text)
@@ -187,7 +191,7 @@ class SplitDisplay(SampleBase):
             weather_description = global_vars.get("weather_description", "N/A")
 
             if temperature is None or feels_like is None or humidity is None:
-                print("Weather data is not available yet. Skipping this iteration.")
+                logging.info("Weather data not available yet; skipping frame.")
                 time.sleep(2)
                 continue
 
@@ -202,6 +206,8 @@ if __name__ == "__main__":
     logging.info("Application started")
     try:
         app = SplitDisplay()
+        # Optionally wait briefly for first weather fetch to avoid early empty frames
+        global_vars["initial_weather_fetched"].wait(timeout=15)
         if (not app.process()):
             app.print_help()
     except Exception as e:
