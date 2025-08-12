@@ -225,10 +225,13 @@ int main(int argc, char **argv) {
   signal(SIGTERM, InterruptHandler);
   signal(SIGINT, InterruptHandler);
 
+  // Parse standard LED matrix flags so hardware mapping like --led-gpio-mapping works.
   rgb_matrix::RGBMatrix::Options options;
   rgb_matrix::RuntimeOptions runtime;
-  options.rows = 32; options.cols = 64; options.chain_length=1; options.parallel=1;
-  // Allow overriding via standard flags parsed by rpi-rgb-led-matrix sample parser if desired.
+  if (!rgb_matrix::ParseOptionsFromFlags(&argc, &argv, &options, &runtime)) {
+    fprintf(stderr, "Invalid LED options.\n");
+    return 1;
+  }
 
   AppConfig cfg;
   LoadConfig("TEST/test-config.ini", cfg);
@@ -237,8 +240,11 @@ int main(int argc, char **argv) {
   if (matrix == nullptr) return 1;
   FrameCanvas *offscreen = matrix->CreateFrameCanvas();
 
-  Font font; font.LoadFont("fonts/5x7.bdf");
-  Color text_color = Color(255,255,255);
+  Font font;
+  if (!font.LoadFont("../fonts/5x7.bdf")) {
+    // Fallback if running from repo root
+    font.LoadFont("fonts/5x7.bdf");
+  }
 
   WeatherState weather;
   std::thread t(WeatherThread, std::ref(cfg), std::ref(weather));
