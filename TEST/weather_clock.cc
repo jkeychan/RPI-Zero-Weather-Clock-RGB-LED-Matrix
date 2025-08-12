@@ -232,6 +232,8 @@ int main(int argc, char **argv) {
     fprintf(stderr, "Invalid LED options.\n");
     return 1;
   }
+  // Sensible defaults for Pi Zero W if not provided via flags
+  if (options.gpio_slowdown == 0) options.gpio_slowdown = 4;
 
   AppConfig cfg;
   LoadConfig("TEST/test-config.ini", cfg);
@@ -239,6 +241,31 @@ int main(int argc, char **argv) {
   RGBMatrix *matrix = rgb_matrix::CreateMatrixFromOptions(options, runtime);
   if (matrix == nullptr) return 1;
   FrameCanvas *offscreen = matrix->CreateFrameCanvas();
+
+  // Diagnostic: print resolved options
+  fprintf(stderr, "Matrix initialized: %dx%d chain=%d parallel=%d slowdown=%d mapping=%s\n",
+          options.cols, options.rows, options.chain_length, options.parallel,
+          options.gpio_slowdown, options.hardware_mapping ? options.hardware_mapping : "(default)");
+
+  // Quick test pattern for 2 seconds to confirm panel output
+  {
+    auto t_end = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+    int w = offscreen->width();
+    int h = offscreen->height();
+    while (std::chrono::steady_clock::now() < t_end) {
+      offscreen->Fill(0, 0, 0);
+      // Color bars
+      for (int y = 0; y < h; ++y) {
+        for (int x = 0; x < w; ++x) {
+          if (x < w/3) offscreen->SetPixel(x, y, 255, 0, 0);
+          else if (x < 2*w/3) offscreen->SetPixel(x, y, 0, 255, 0);
+          else offscreen->SetPixel(x, y, 0, 0, 255);
+        }
+      }
+      offscreen = matrix->SwapOnVSync(offscreen);
+      usleep(20000);
+    }
+  }
 
   Font font;
   if (!font.LoadFont("../fonts/5x7.bdf")) {
