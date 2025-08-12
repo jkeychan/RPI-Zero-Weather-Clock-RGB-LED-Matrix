@@ -233,7 +233,7 @@ int main(int argc, char **argv) {
     return 1;
   }
   // Sensible defaults for Pi Zero W if not provided via flags
-  if (options.gpio_slowdown == 0) options.gpio_slowdown = 4;
+  if (runtime.gpio_slowdown == 0) runtime.gpio_slowdown = 4;
 
   AppConfig cfg;
   LoadConfig("TEST/test-config.ini", cfg);
@@ -245,7 +245,7 @@ int main(int argc, char **argv) {
   // Diagnostic: print resolved options
   fprintf(stderr, "Matrix initialized: %dx%d chain=%d parallel=%d slowdown=%d mapping=%s\n",
           options.cols, options.rows, options.chain_length, options.parallel,
-          options.gpio_slowdown, options.hardware_mapping ? options.hardware_mapping : "(default)");
+          runtime.gpio_slowdown, options.hardware_mapping ? options.hardware_mapping : "(default)");
 
   // Quick test pattern for 2 seconds to confirm panel output
   {
