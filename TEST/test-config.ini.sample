@@ -1,0 +1,25 @@
+[Weather]
+api_key = YOUR_OPENWEATHERMAP_API_KEY
+zip_code = 10001,US
+
+[Display]
+# 12 or 24
+time_format = 24
+# C or F
+temp_unit = F
+# seconds
+text_cycle_interval = 10
+# brightness
+AUTO_BRIGHTNESS_ADJUST = true
+MANUAL_BRIGHTNESS = 50
+MIN_BRIGHTNESS = 20
+MAX_BRIGHTNESS = 60
+# perf
+FRAME_INTERVAL_MS = 60
+BRIGHTNESS_UPDATE_SECONDS = 10
+DYNAMIC_COLOR_INTERVAL_SECONDS = 1
+LANGTONS_ANT_ENABLED = true
+
+[NTP]
+preferred_server = pool.ntp.org
+
