@@ -1,5 +1,6 @@
 from PIL import Image, ImageDraw
 import math
+from functools import lru_cache
 
 # Global constants
 # NOTE: Ideal for 5x7 font size, you will need to adjust these parameters for other LED Matrices
@@ -29,6 +30,7 @@ def draw_sun(canvas):
     canvas.SetImage(icons["sun"], ICON_POSITION_X, ICON_POSITION_Y)
 
 
+@lru_cache(maxsize=None)
 def create_sun_icon():
     icon_image = init_icon()
     draw_icon = ImageDraw.Draw(icon_image)
@@ -65,6 +67,7 @@ def draw_cloud(canvas):
     canvas.SetImage(icons["cloud"], ICON_POSITION_X, ICON_POSITION_Y)
 
 
+@lru_cache(maxsize=None)
 def create_cloud_icon():
     icon_image = init_icon()
     draw_icon = ImageDraw.Draw(icon_image)
@@ -122,6 +125,7 @@ def draw_small_cross(draw, center, size=2, color=(173, 216, 230)):
     draw.line((x + size, y - size, x - size, y + size), fill=color)
 
 
+@lru_cache(maxsize=None)
 def create_snow_icon():
     icon_image = init_icon()
     draw_icon = ImageDraw.Draw(icon_image)
@@ -159,6 +163,7 @@ def draw_thunderstorm(canvas):
     canvas.SetImage(icons["thunderstorm"], ICON_POSITION_X, ICON_POSITION_Y)
 
 
+@lru_cache(maxsize=None)
 def create_thunderstorm_icon():
     icon_image = init_icon()
     draw_icon = ImageDraw.Draw(icon_image)
@@ -200,6 +205,7 @@ def draw_rain(canvas):
     canvas.SetImage(icons["rain"], ICON_POSITION_X, ICON_POSITION_Y)
 
 
+@lru_cache(maxsize=None)
 def create_rain_icon():
     icon_image = init_icon()
     draw_icon = ImageDraw.Draw(icon_image)
@@ -230,6 +236,7 @@ def draw_fog(canvas):
     canvas.SetImage(icons["fog"], ICON_POSITION_X, ICON_POSITION_Y)
 
 
+@lru_cache(maxsize=None)
 def create_fog_icon():
     icon_image = init_icon()
     draw_icon = ImageDraw.Draw(icon_image)

@@ -46,6 +46,10 @@ class AppConfig:
         self.FONT_SIZE = self.config.getint(DISPLAY_SECTION, 'FONT_SIZE')
         self.BRIGHTNESS = self.config.getint(
             DISPLAY_SECTION, 'BRIGHTNESS', fallback=50)
+        self.MIN_BRIGHTNESS = self.config.getint(
+            DISPLAY_SECTION, 'MIN_BRIGHTNESS', fallback=20)
+        self.MAX_BRIGHTNESS = self.config.getint(
+            DISPLAY_SECTION, 'MAX_BRIGHTNESS', fallback=60)
         self.text_cycle_interval = self.config.getint(
             DISPLAY_SECTION, 'text_cycle_interval', fallback=10)
         self.LANGTONS_ANT_ENABLED = self.config.getboolean(
