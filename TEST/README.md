@@ -20,8 +20,13 @@ Prerequisites (on Raspberry Pi)
   - sudo apt-get install -y g++ make libcurl4-openssl-dev
 
 Build
-- cd TEST && make
-  - produces `./weather_clock`
+- Option A: using the checked-in submodule (preferred)
+  - cd matrix && sudo make build-python && sudo make install-python
+  - cd ../TEST && make
+    - produces `./weather_clock`
+- Option B: using a system install of the library
+  - If headers/libs are in non-standard locations, pass
+    - make MAT_INC=/path/to/include MAT_LIB=/path/to/lib
 
 Run (sudo required for GPIO)
 - sudo ./weather_clock --led-cols=64 --led-rows=32
