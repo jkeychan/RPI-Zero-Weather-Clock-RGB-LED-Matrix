@@ -129,7 +129,7 @@ class SplitDisplay(SampleBase):
         # Set main_weather_color based on the main_weather description or use a default white color
         main_weather_color = graphics.Color(255, 255, 255)  # Default to white
         humidity_color = self.get_humidity_color(humidity)
-        dynamic_color = graphics.Color(*get_color_by_time(60))
+        dynamic_color = graphics.Color(*get_color_by_time(self.app_config.DYNAMIC_COLOR_INTERVAL_SECONDS))
 
         now = time.localtime()
         time_str = time.strftime("%H:%M", now)
@@ -181,13 +181,21 @@ class SplitDisplay(SampleBase):
         last_switch_time = time.time()
         scroll_pos = offscreen_canvas.width  # Initialize scroll position
 
+        last_brightness_update = 0.0
+        last_dynamic_update = 0.0
+        dynamic_color = graphics.Color(*get_color_by_time(self.app_config.DYNAMIC_COLOR_INTERVAL_SECONDS))
+        frame_interval = max(20, self.app_config.FRAME_INTERVAL_MS) / 1000.0
+
         while True:
             offscreen_canvas.Clear()
             if self.app_config.LANGTONS_ANT_ENABLED:
                 ant_x, ant_y, ant_color = langtons_ant.move()
                 offscreen_canvas.SetPixel(ant_x, ant_y, *ant_color)
 
-            self.adjust_brightness_by_time()
+            now_secs = time.time()
+            if now_secs - last_brightness_update >= self.app_config.BRIGHTNESS_UPDATE_SECONDS:
+                self.adjust_brightness_by_time()
+                last_brightness_update = now_secs
 
             if (time.time() - last_switch_time) >= text_cycle_interval:
                 show_main_weather = not show_main_weather
@@ -208,11 +216,16 @@ class SplitDisplay(SampleBase):
                 time.sleep(2)
                 continue
 
+            # Update dynamic color at most once per configured interval
+            if now_secs - last_dynamic_update >= self.app_config.DYNAMIC_COLOR_INTERVAL_SECONDS:
+                dynamic_color = graphics.Color(*get_color_by_time(self.app_config.DYNAMIC_COLOR_INTERVAL_SECONDS))
+                last_dynamic_update = now_secs
+
             scroll_pos = self.draw_weather_data(offscreen_canvas, font, temperature, feels_like,
                                                 humidity, main_weather, weather_description, show_main_weather, scroll_pos)
             offscreen_canvas = self.matrix.SwapOnVSync(offscreen_canvas)
             self.display_weather_icon(main_weather)
-            time.sleep(0.03)
+            time.sleep(frame_interval)
 
 
 if __name__ == "__main__":
