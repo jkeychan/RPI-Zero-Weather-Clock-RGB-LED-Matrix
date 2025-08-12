@@ -5,6 +5,9 @@ import threading
 import logging
 from typing import Tuple, Optional, Dict, Any
 
+# Reuse HTTP session across requests
+_session = requests.Session()
+
 
 def start_weather_thread(global_vars: Dict[str, Any], api_key: str, zip_code: str, temp_unit: str) -> None:
     logging.info("Starting the weather data fetch thread.")
@@ -12,7 +15,7 @@ def start_weather_thread(global_vars: Dict[str, Any], api_key: str, zip_code: st
         target=fetch_weather_data_periodically,
         args=("https://api.openweathermap.org/data/2.5/weather",
               zip_code, api_key, temp_unit, 600, global_vars)
-    )
+    , name="weather-fetcher")
     weather_thread.daemon = True
     weather_thread.start()
     logging.info("Weather data fetch thread started.")
@@ -26,9 +29,9 @@ def fetch_weather(api_endpoint: str, zip_code: str, api_key: str, temp_unit: str
     logging.debug(
         f"Fetching weather data from {api_endpoint} with zip_code={zip_code} and temp_unit={temp_unit}.")
     try:
-        response = requests.get(api_endpoint, params={
+        response = _session.get(api_endpoint, params={
             "zip": zip_code, "appid": api_key, "units": "metric"
-        })
+        }, timeout=10)
         response.raise_for_status()
         logging.info("Weather data fetched successfully.")
         weather_data = response.json()
@@ -91,15 +94,16 @@ def update_global_vars(global_vars: Dict[str, Any], weather_data: Tuple[int, int
         f"Sunrise: {sunrise_time_str}, Sunset: {sunset_time_str}"
     )
 
-    global_vars.update({
-        "temperature": temperature,
-        "feels_like": feels_like,
-        "humidity": humidity,
-        "main_weather": main_weather,
-        "sunrise": sunrise,
-        "sunset": sunset,
-        "weather_description": weather_description
-    })
+    with global_vars["lock"]:
+        global_vars.update({
+            "temperature": temperature,
+            "feels_like": feels_like,
+            "humidity": humidity,
+            "main_weather": main_weather,
+            "sunrise": sunrise,
+            "sunset": sunset,
+            "weather_description": weather_description
+        })
     global_vars["initial_weather_fetched"].set()
 
 
