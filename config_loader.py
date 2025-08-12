@@ -42,6 +42,8 @@ class AppConfig:
     def load_display_config(self) -> None:
         self.temp_unit = self.config.get(
             DISPLAY_SECTION, 'temp_unit', fallback='C')
+        self.time_format = self.config.getint(
+            DISPLAY_SECTION, 'time_format', fallback=24)
         self.FONT_PATH = self.config.get(DISPLAY_SECTION, 'FONT_PATH')
         self.FONT_SIZE = self.config.getint(DISPLAY_SECTION, 'FONT_SIZE')
         self.BRIGHTNESS = self.config.getint(
@@ -58,6 +60,8 @@ class AppConfig:
             DISPLAY_SECTION, 'AUTO_BRIGHTNESS_ADJUST', fallback=True)
         self.MANUAL_BRIGHTNESS = self.config.getint(
             DISPLAY_SECTION, 'MANUAL_BRIGHTNESS', fallback=50)
+        self.LOG_LEVEL = self.config.get(
+            DISPLAY_SECTION, 'LOG_LEVEL', fallback='INFO')
 
     def load_ntp_config(self) -> None:
         self.preferred_server = self.config.get(
@@ -134,5 +138,6 @@ def initialize_global_vars() -> Dict[str, Any]:
         "sunrise": None,
         "sunset": None,
         "weather_description": None,
-        "initial_weather_fetched": threading.Event()
+        "initial_weather_fetched": threading.Event(),
+        "lock": threading.Lock()
     }

@@ -17,6 +17,13 @@ setup_logging()
 app_config = get_app_config()
 global_vars = initialize_global_vars()
 
+# Apply configurable log level
+try:
+    logging.getLogger().setLevel(
+        getattr(logging, app_config.LOG_LEVEL.upper(), logging.INFO))
+except Exception:
+    pass
+
 # Start the weather fetching thread
 start_weather_thread(global_vars, app_config.api_key,
                      app_config.zip_code, app_config.temp_unit)
@@ -126,6 +133,8 @@ class SplitDisplay(SampleBase):
 
         now = time.localtime()
         time_str = time.strftime("%H:%M", now)
+        if self.app_config.time_format == 12:
+            time_str = time.strftime("%I:%M", now).lstrip('0')
         day_str = time.strftime("%a", now)
         temperature_str = "{}{}".format(temperature, self.app_config.temp_unit)
         feels_str = "{}".format(feels_like) + "|"
@@ -161,8 +170,7 @@ class SplitDisplay(SampleBase):
         offscreen_canvas = self.matrix.CreateFrameCanvas()
 
         self.matrix.brightness = self.initial_brightness
-        logging.info(
-            f"Initial brightness set to {self.initial_brightness}% at {datetime.datetime.now().strftime('%H:%M')}")
+        # Already logged at init; avoid duplicate log
 
         if self.app_config.LANGTONS_ANT_ENABLED:
             langtons_ant = LangtonsAnt(WIDTH - 1, HEIGHT - 1)
@@ -186,11 +194,14 @@ class SplitDisplay(SampleBase):
                 last_switch_time = time.time()
                 scroll_pos = offscreen_canvas.width  # Reset scroll position on toggle
 
-            temperature = global_vars["temperature"]
-            feels_like = global_vars["feels_like"]
-            humidity = global_vars["humidity"]
-            main_weather = global_vars["main_weather"]
-            weather_description = global_vars.get("weather_description", "N/A")
+            # Safely snapshot weather values under lock
+            with global_vars["lock"]:
+                temperature = global_vars["temperature"]
+                feels_like = global_vars["feels_like"]
+                humidity = global_vars["humidity"]
+                main_weather = global_vars["main_weather"]
+                weather_description = global_vars.get(
+                    "weather_description", "N/A")
 
             if temperature is None or feels_like is None or humidity is None:
                 logging.info("Weather data not available yet; skipping frame.")
