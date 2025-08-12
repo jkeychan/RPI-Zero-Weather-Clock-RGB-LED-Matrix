@@ -12,9 +12,9 @@
 #include <sstream>
 #include <map>
 #include "simple_json.hh"
+#include <cmath>
 
 using rgb_matrix::RGBMatrix;
-using rgb_matrix::RGBMatrixOptions;
 using rgb_matrix::FrameCanvas;
 using rgb_matrix::Canvas;
 using rgb_matrix::Color;
@@ -167,7 +167,7 @@ static Color HumidityColor(int humidity) {
 static Color DynamicRainbowColor(int seconds_period) {
   using namespace std::chrono;
   auto now = steady_clock::now().time_since_epoch();
-  double t = fmod(duration_cast<milliseconds>(now).count()/1000.0, (double)seconds_period) / seconds_period;
+  double t = std::fmod(duration_cast<milliseconds>(now).count()/1000.0, (double)seconds_period) / seconds_period;
   double h = t; double s=1.0, v=1.0;
   double r,g,b;
   int i = int(h*6);
@@ -225,14 +225,15 @@ int main(int argc, char **argv) {
   signal(SIGTERM, InterruptHandler);
   signal(SIGINT, InterruptHandler);
 
-  RGBMatrixOptions options;
+  rgb_matrix::RGBMatrix::Options options;
+  rgb_matrix::RuntimeOptions runtime;
   options.rows = 32; options.cols = 64; options.chain_length=1; options.parallel=1;
   // Allow overriding via standard flags parsed by rpi-rgb-led-matrix sample parser if desired.
 
   AppConfig cfg;
   LoadConfig("TEST/test-config.ini", cfg);
 
-  RGBMatrix *matrix = RGBMatrix::CreateFromOptions(options);
+  RGBMatrix *matrix = rgb_matrix::CreateMatrixFromOptions(options, runtime);
   if (matrix == nullptr) return 1;
   FrameCanvas *offscreen = matrix->CreateFrameCanvas();
 
@@ -247,7 +248,6 @@ int main(int argc, char **argv) {
 
   bool show_main_weather = true; double last_switch = 0;
   int scroll_x = offscreen->width();
-  int y1=10, y2=20, y3=30;
 
   auto start = std::chrono::steady_clock::now();
   auto to_seconds = [](auto tp){return std::chrono::duration_cast<std::chrono::seconds>(tp).count();};
@@ -296,14 +296,14 @@ int main(int argc, char **argv) {
     if (cfg.time_format==12) strftime(timebuf, sizeof(timebuf), "%I:%M", tm); else strftime(timebuf, sizeof(timebuf), "%H:%M", tm);
     if (timebuf[0]=='0') timebuf[0] = ' ';
 
-    std::string daybuf(3,' ');
-    strftime(daybuf.data(), 4, "%a", tm);
+    char daybuf[4];
+    strftime(daybuf, sizeof(daybuf), "%a", tm);
 
     std::string temp = std::to_string(tF) + (cfg.temp_unit=='F'?"F":"C");
     std::string feels = std::to_string(fF) + "|";
     std::string humidity = std::to_string(hum) + "%";
 
-    rgb_matrix::DrawText(offscreen, font, 2, 8, dynamic, daybuf.c_str());
+    rgb_matrix::DrawText(offscreen, font, 2, 8, dynamic, daybuf);
     rgb_matrix::DrawText(offscreen, font, 34, 8, dynamic, timebuf);
     rgb_matrix::DrawText(offscreen, font, 2, 16, TempColor(tF), temp.c_str());
     rgb_matrix::DrawText(offscreen, font, 33, 16, TempColor(fF), feels.c_str());
