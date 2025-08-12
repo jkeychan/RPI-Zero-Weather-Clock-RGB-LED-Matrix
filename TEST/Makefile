@@ -6,10 +6,13 @@ CXXFLAGS := -O2 -std=c++17 -Wall -Wextra
 MAT_INC ?=
 MAT_LIB ?=
 
-# Auto-detect submodule path; fallback to system install (/usr/local)
+# Auto-detect common install locations; fallback to system install (/usr/local)
 ifneq (,$(wildcard ../matrix/include/led-matrix.h))
   DETECTED_INC := ../matrix/include
   DETECTED_LIB := ../matrix/lib
+else ifneq (,$(wildcard $(HOME)/Documents/Code/rpi-rgb-led-matrix/include/led-matrix.h))
+  DETECTED_INC := $(HOME)/Documents/Code/rpi-rgb-led-matrix/include
+  DETECTED_LIB := $(HOME)/Documents/Code/rpi-rgb-led-matrix/lib
 else
   DETECTED_INC := /usr/local/include
   DETECTED_LIB := /usr/local/lib
