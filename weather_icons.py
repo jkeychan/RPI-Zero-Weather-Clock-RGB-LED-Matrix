@@ -154,11 +154,9 @@ def create_snow_icon():
 
 def draw_thunderstorm(canvas):
     """Draw a thunderstorm icon on the given canvas."""
-    global thunderstorm_icon
-    if thunderstorm_icon is None:
-        thunderstorm_icon = create_thunderstorm_icon()
-    canvas.SetImage(icons["thunderstorm_icon"],
-                    ICON_POSITION_X, ICON_POSITION_Y)
+    if icons["thunderstorm"] is None:
+        icons["thunderstorm"] = create_thunderstorm_icon()
+    canvas.SetImage(icons["thunderstorm"], ICON_POSITION_X, ICON_POSITION_Y)
 
 
 def create_thunderstorm_icon():
@@ -227,10 +225,9 @@ def create_rain_icon():
 
 def draw_fog(canvas):
     """Draw a fog icon on the given canvas."""
-    global fog_icon
-    if fog_icon is None:
-        fog_icon = create_fog_icon()
-    canvas.SetImage(icons["fog_icon"], ICON_POSITION_X, ICON_POSITION_Y)
+    if icons["fog"] is None:
+        icons["fog"] = create_fog_icon()
+    canvas.SetImage(icons["fog"], ICON_POSITION_X, ICON_POSITION_Y)
 
 
 def create_fog_icon():
