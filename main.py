@@ -71,18 +71,20 @@ class SplitDisplay(SampleBase):
 
         noon_time = sunrise_time + (sunset_time - sunrise_time) / 2
 
+        min_b = self.app_config.MIN_BRIGHTNESS
+        max_b = self.app_config.MAX_BRIGHTNESS
         if now < sunrise_time:
-            brightness = 20  # Before sunrise: 20% brightness
+            brightness = min_b
         elif now < noon_time:
-            brightness = 20 + (40 * (now - sunrise_time).total_seconds() /
-                               (noon_time - sunrise_time).total_seconds())
+            brightness = min_b + ((max_b - min_b) * (now - sunrise_time).total_seconds() /
+                                  (noon_time - sunrise_time).total_seconds())
         elif now < sunset_time:
-            brightness = 60 - (40 * (now - noon_time).total_seconds() /
-                               (sunset_time - noon_time).total_seconds())
+            brightness = max_b - ((max_b - min_b) * (now - noon_time).total_seconds() /
+                                  (sunset_time - noon_time).total_seconds())
         else:
-            brightness = 20  # After sunset: 20% brightness
+            brightness = min_b
 
-        brightness = max(20, min(60, brightness))
+        brightness = max(min_b, min(max_b, brightness))
         self.matrix.brightness = int(brightness)
 
     def get_humidity_color(self, humidity):

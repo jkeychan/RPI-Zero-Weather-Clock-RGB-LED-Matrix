@@ -61,17 +61,4 @@ TEMP_COLORS: List[TempColorRange] = generate_temp_color_gradient(
 WIDTH: int = 64
 HEIGHT: int = 32
 
-# Function to get color based on temperature
-
-
-def get_temp_color(temperature: float) -> Tuple[int, int, int]:
-    """Returns the color corresponding to the given temperature."""
-    if temperature < 0:
-        return (0, 0, 255)  # Always return blue for temperatures below 0°F
-    elif temperature > 100:
-        return (255, 0, 0)  # Always return red for temperatures above 100°F
-    for temp_color_range in TEMP_COLORS:
-        if temperature <= temp_color_range.temp_threshold:
-            return temp_color_range.color
-    # Default to the highest color if out of range
-    return TEMP_COLORS[-1].color
+# Note: temperature-to-color mapping should be accessed via utils.get_temp_color()

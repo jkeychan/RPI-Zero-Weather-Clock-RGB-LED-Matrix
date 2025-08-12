@@ -57,17 +57,25 @@ def fetch_weather_data_periodically(
 ) -> None:
     logging.info(
         f"Starting periodic weather data fetch every {interval} seconds.")
+    backoff_seconds = 5
+    max_backoff = min(300, interval)
     while True:
         start_time = datetime.datetime.now()
         weather_data = fetch_weather(
             api_endpoint, zip_code, api_key, temp_unit)
         if weather_data:
             update_global_vars(global_vars, weather_data, temp_unit)
+            backoff_seconds = 5
+        else:
+            # exponential backoff up to max_backoff
+            backoff_seconds = min(max_backoff, backoff_seconds * 2)
+            logging.info(f"Weather fetch failed; backing off for {backoff_seconds}s")
 
         elapsed_time = (datetime.datetime.now() - start_time).total_seconds()
         logging.debug(
             f"Weather data fetch and update took {elapsed_time} seconds.")
-        time.sleep(interval)
+        # If success, normal interval; if failure, use backoff
+        time.sleep(interval if weather_data else backoff_seconds)
 
 
 def update_global_vars(global_vars: Dict[str, Any], weather_data: Tuple[int, int, int, str, int, int, str], temp_unit: str) -> None:
