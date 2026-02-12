@@ -10,7 +10,28 @@ from constants import WIDTH, HEIGHT
 from langtons_ant import LangtonsAnt
 from samplebase import SampleBase
 import ntplib
-from time import ctime
+
+# Approximate character width for 5x7 font (used for scroll threshold)
+CHAR_WIDTH_ESTIMATE = 6
+
+# Module-level weather icon mapping (OpenWeatherMap main categories)
+WEATHER_DRAW_MAP = {
+    'Clear': weather_icons.draw_sun,
+    'Clouds': weather_icons.draw_cloud,
+    'Rain': weather_icons.draw_rain,
+    'Snow': weather_icons.draw_snow,
+    'Thunderstorm': weather_icons.draw_thunderstorm,
+    'Drizzle': weather_icons.draw_rain,
+    'Fog': weather_icons.draw_fog,
+    'Mist': weather_icons.draw_fog,
+    'Haze': weather_icons.draw_fog,
+    'Smoke': weather_icons.draw_fog,
+    'Dust': weather_icons.draw_fog,
+    'Sand': weather_icons.draw_fog,
+    'Ash': weather_icons.draw_fog,
+    'Squall': weather_icons.draw_thunderstorm,
+    'Tornado': weather_icons.draw_thunderstorm,
+}
 
 # Setup logging and load configuration
 setup_logging()
@@ -21,8 +42,8 @@ global_vars = initialize_global_vars()
 try:
     logging.getLogger().setLevel(
         getattr(logging, app_config.LOG_LEVEL.upper(), logging.INFO))
-except Exception:
-    pass
+except (AttributeError, ValueError) as e:
+    logging.warning(f"Invalid LOG_LEVEL '{app_config.LOG_LEVEL}': {e}")
 
 # Start the weather fetching thread
 start_weather_thread(global_vars, app_config.api_key,
@@ -50,7 +71,7 @@ class SplitDisplay(SampleBase):
         try:
             ntp_client = ntplib.NTPClient()
             response = ntp_client.request(ntp_server, version=3)
-            return datetime.datetime.strptime(ctime(response.tx_time), "%a %b %d %H:%M:%S %Y")
+            return datetime.datetime.strptime(time.ctime(response.tx_time), "%a %b %d %H:%M:%S %Y")
         except Exception as e:
             logging.error(f"Failed to get NTP time: {e}")
             return None
@@ -68,9 +89,6 @@ class SplitDisplay(SampleBase):
         sunrise = global_vars.get("sunrise")
         sunset = global_vars.get("sunset")
         if sunrise is None or sunset is None:
-            logging.info(
-                "Sunrise or sunset data not available yet; skipping brightness adjust.")
-            time.sleep(2)
             return
 
         sunrise_time = datetime.datetime.fromtimestamp(sunrise)
@@ -103,17 +121,7 @@ class SplitDisplay(SampleBase):
             return graphics.Color(255, 69, 0)  # Orange for high humidity
 
     def display_weather_icon(self, main_weather):
-        draw_map = {
-            'Clear': weather_icons.draw_sun,
-            'Clouds': weather_icons.draw_cloud,
-            'Rain': weather_icons.draw_rain,
-            'Snow': weather_icons.draw_snow,
-            'Thunderstorm': weather_icons.draw_thunderstorm,
-            'Fog': weather_icons.draw_fog,
-            'Mist': weather_icons.draw_fog,
-            'Haze': weather_icons.draw_fog,
-        }
-        fn = draw_map.get(main_weather)
+        fn = WEATHER_DRAW_MAP.get(main_weather)
         if fn:
             fn(self.matrix)
             if main_weather == 'Thunderstorm':
@@ -121,15 +129,17 @@ class SplitDisplay(SampleBase):
 
     def draw_weather_data(self, offscreen_canvas, font, temperature, feels_like, humidity, main_weather, weather_description, show_main_weather, scroll_pos):
         weather_text = main_weather if show_main_weather else weather_description
-        text_length_est = len(weather_text) * 6
+        text_length_est = len(weather_text) * CHAR_WIDTH_ESTIMATE
 
-        temperature_color = graphics.Color(*get_temp_color(temperature))
-        feels_like_color = graphics.Color(*get_temp_color(feels_like))
+        temp_unit = self.app_config.temp_unit
+        temperature_color = graphics.Color(*get_temp_color(temperature, temp_unit))
+        feels_like_color = graphics.Color(*get_temp_color(feels_like, temp_unit))
 
         # Set main_weather_color based on the main_weather description or use a default white color
         main_weather_color = graphics.Color(255, 255, 255)  # Default to white
         humidity_color = self.get_humidity_color(humidity)
-        dynamic_color = graphics.Color(*get_color_by_time(self.app_config.DYNAMIC_COLOR_INTERVAL_SECONDS))
+        dynamic_color = graphics.Color(
+            *get_color_by_time(self.app_config.DYNAMIC_COLOR_INTERVAL_SECONDS))
 
         now = time.localtime()
         time_str = time.strftime("%H:%M", now)
@@ -183,7 +193,10 @@ class SplitDisplay(SampleBase):
 
         last_brightness_update = 0.0
         last_dynamic_update = 0.0
-        dynamic_color = graphics.Color(*get_color_by_time(self.app_config.DYNAMIC_COLOR_INTERVAL_SECONDS))
+        last_weather_unavailable_log = 0.0
+        WEATHER_LOG_THROTTLE_SECONDS = 30
+        dynamic_color = graphics.Color(
+            *get_color_by_time(self.app_config.DYNAMIC_COLOR_INTERVAL_SECONDS))
         frame_interval = max(20, self.app_config.FRAME_INTERVAL_MS) / 1000.0
 
         while True:
@@ -212,13 +225,16 @@ class SplitDisplay(SampleBase):
                     "weather_description", "N/A")
 
             if temperature is None or feels_like is None or humidity is None:
-                logging.info("Weather data not available yet; skipping frame.")
-                time.sleep(2)
+                if now_secs - last_weather_unavailable_log >= WEATHER_LOG_THROTTLE_SECONDS:
+                    logging.info("Weather data not available yet; skipping frame.")
+                    last_weather_unavailable_log = now_secs
+                time.sleep(0.1)
                 continue
 
             # Update dynamic color at most once per configured interval
             if now_secs - last_dynamic_update >= self.app_config.DYNAMIC_COLOR_INTERVAL_SECONDS:
-                dynamic_color = graphics.Color(*get_color_by_time(self.app_config.DYNAMIC_COLOR_INTERVAL_SECONDS))
+                dynamic_color = graphics.Color(
+                    *get_color_by_time(self.app_config.DYNAMIC_COLOR_INTERVAL_SECONDS))
                 last_dynamic_update = now_secs
 
             scroll_pos = self.draw_weather_data(offscreen_canvas, font, temperature, feels_like,

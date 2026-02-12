@@ -8,6 +8,15 @@ ICON_SIZE = 14
 ICON_POSITION_X = 50
 ICON_POSITION_Y = 20
 
+# Shared cloud shape ellipses (reused by cloud, snow, thunderstorm icons)
+CLOUD_ELLIPSE_PARTS = [
+    (3, 5, 7, 9),   # Smaller ellipse on the left top
+    (5, 3, 11, 9),  # Large middle top ellipse
+    (9, 5, 13, 9),  # Smaller ellipse on the right top
+    (2, 7, 12, 12),  # Large bottom ellipse to round off the bottom
+    (10, 7, 14, 11),  # Small ellipse on the right to extend the cloud
+]
+
 
 def init_icon():
     """Initialize a blank icon image of fixed size."""
@@ -73,15 +82,7 @@ def create_cloud_icon():
     ]
     draw_icon.ellipse(sun_bbox, fill=sun_color, outline=sun_color)
 
-    # Cloud parts
-    cloud_parts = [
-        (3, 5, 7, 9),  # Smaller ellipse on the left top
-        (5, 3, 11, 9),  # Large middle top ellipse
-        (9, 5, 13, 9),  # Smaller ellipse on the right top
-        (2, 7, 12, 12),  # Large bottom ellipse to round off the bottom
-        (10, 7, 14, 11),  # Small ellipse on the right to extend the cloud
-    ]
-    for part in cloud_parts:
+    for part in CLOUD_ELLIPSE_PARTS:
         draw_icon.ellipse(part, fill=cloud_color, outline=cloud_color)
 
     return icon_image
@@ -117,17 +118,7 @@ def create_snow_icon():
     cloud_color = (128, 128, 123)
     light_blue = (173, 216, 230)  # Light blue color for the snowflake
 
-    # Define cloud parts
-    cloud_parts = [
-        (3, 5, 7, 9),
-        (5, 3, 11, 9),
-        (9, 5, 13, 9),
-        (2, 7, 12, 12),
-        (10, 7, 14, 11),
-    ]
-
-    # Draw cloud
-    for part in cloud_parts:
+    for part in CLOUD_ELLIPSE_PARTS:
         draw_icon.ellipse(part, fill=cloud_color, outline=cloud_color)
 
     # Draw a larger radial snowflake pattern
@@ -154,17 +145,7 @@ def create_thunderstorm_icon():
     cloud_color = (64, 64, 64)  # Dark gray for the cloud
     lightning_color = (255, 255, 0)  # Bright yellow for the lightning
 
-    # Cloud parts
-    cloud_parts = [
-        (3, 5, 7, 9),  # Smaller ellipse on the left top
-        (5, 3, 11, 9),  # Large middle top ellipse
-        (9, 5, 13, 9),  # Smaller ellipse on the right top
-        (2, 7, 12, 12),  # Large bottom ellipse to round off the bottom
-        (10, 7, 14, 11),  # Small ellipse on the right to extend the cloud
-    ]
-
-    # Draw cloud parts
-    for part in cloud_parts:
+    for part in CLOUD_ELLIPSE_PARTS:
         draw_icon.ellipse(part, fill=cloud_color, outline=cloud_color)
 
     # Enhanced lightning bolt with more forks

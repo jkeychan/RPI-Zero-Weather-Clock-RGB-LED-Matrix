@@ -8,7 +8,6 @@ class LangtonsAnt:
         self.grid = [[0 for _ in range(height)] for _ in range(width)]
         self.ant_colors = [(200, 0, 0), (0, 200, 0),
                            (0, 0, 200), (150, 100, 0)]
-        self.trail = []  # Stores the last few positions of the ant
 
     def move(self):
         current_color = self.grid[self.ant_x][self.ant_y]
@@ -32,13 +31,4 @@ class LangtonsAnt:
         elif self.ant_dir == 3:  # moving down
             self.ant_y = (self.ant_y + 1) % self.height
 
-         # Append the current position to the trail
-        self.trail.append((self.ant_x, self.ant_y, self.ant_colors[new_color]))
-        # Only keep the last few positions in the trail
-        trail_length = 3  # for example, keep the last 3 positions
-        self.trail = self.trail[-trail_length:]
-
         return (self.ant_x, self.ant_y, self.ant_colors[new_color])
-
-    def get_trail(self):
-        return list(self.trail)

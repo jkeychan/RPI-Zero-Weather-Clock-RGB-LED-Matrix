@@ -1,14 +1,12 @@
 import configparser
-import csv
 import logging
 import logging.handlers
 import threading
 import errno
 import os
-from typing import Dict, Tuple, Any
+from typing import Dict, Any
 
 CONFIG_FILE = 'config.ini'
-COLORS_FILE = 'colors.csv'
 
 # Constants for config sections and keys
 WEATHER_SECTION = 'Weather'
@@ -22,7 +20,6 @@ class AppConfig:
         self.load_weather_config()
         self.load_display_config()
         self.load_ntp_config()
-        self.colors_map = self.load_colors_from_csv(COLORS_FILE)
 
     def load_config(self) -> configparser.ConfigParser:
         config = configparser.ConfigParser()
@@ -72,25 +69,6 @@ class AppConfig:
     def load_ntp_config(self) -> None:
         self.preferred_server = self.config.get(
             NTP_SECTION, 'preferred_server')
-
-    def load_colors_from_csv(self, filename: str) -> Dict[str, Tuple[int, int, int]]:
-        colors = {}
-        if not os.path.exists(filename):
-            logging.error(f"Colors CSV file {filename} not found.")
-            return colors
-
-        try:
-            with open(filename, 'r') as csvfile:
-                csvreader = csv.reader(csvfile)
-                next(csvreader)  # skip header if there's any
-                for row in csvreader:
-                    rgb_values = tuple(map(int, row[1][1:-1].split(',')))
-                    colors[row[0].lower()] = rgb_values
-            logging.info(f"Colors loaded successfully from {filename}.")
-        except Exception as e:
-            logging.error(
-                f"Error loading colors from CSV file {filename}: {e}")
-        return colors
 
 
 def get_app_config() -> AppConfig:
