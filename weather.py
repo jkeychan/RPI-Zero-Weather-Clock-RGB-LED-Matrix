@@ -4,6 +4,7 @@ import datetime
 import threading
 import logging
 from typing import Tuple, Optional, Dict, Any
+from utils import _celsius_to_fahrenheit
 
 # Reuse HTTP session across requests
 _session = requests.Session()
@@ -19,10 +20,6 @@ def start_weather_thread(global_vars: Dict[str, Any], api_key: str, zip_code: st
     weather_thread.daemon = True
     weather_thread.start()
     logging.info("Weather data fetch thread started.")
-
-
-def celsius_to_fahrenheit(celsius: float) -> float:
-    return (celsius * 9/5) + 32
 
 
 def fetch_weather(api_endpoint: str, zip_code: str, api_key: str, temp_unit: str) -> Optional[Tuple[int, int, int, str, int, int, str]]:
@@ -45,8 +42,8 @@ def fetch_weather(api_endpoint: str, zip_code: str, api_key: str, temp_unit: str
         weather_description = weather_data["weather"][0]["description"]
 
         if temp_unit == 'F':
-            temperature = int(celsius_to_fahrenheit(temperature))
-            feels_like = int(celsius_to_fahrenheit(feels_like))
+            temperature = int(_celsius_to_fahrenheit(temperature))
+            feels_like = int(_celsius_to_fahrenheit(feels_like))
 
         return temperature, feels_like, humidity, main_weather, sunrise, sunset, weather_description
     except requests.exceptions.RequestException as e:
