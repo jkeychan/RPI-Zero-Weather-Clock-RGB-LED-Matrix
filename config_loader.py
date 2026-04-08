@@ -58,7 +58,7 @@ class AppConfig:
         self.DYNAMIC_COLOR_INTERVAL_SECONDS = self.config.getint(
             DISPLAY_SECTION, 'DYNAMIC_COLOR_INTERVAL_SECONDS', fallback=1)
         self.LANGTONS_ANT_ENABLED = self.config.getboolean(
-            DISPLAY_SECTION, 'LANGTONS_ANT_ENABLED', fallback=True)
+            DISPLAY_SECTION, 'LANGTONS_ANT_ENABLED', fallback=False)
         self.AUTO_BRIGHTNESS_ADJUST = self.config.getboolean(
             DISPLAY_SECTION, 'AUTO_BRIGHTNESS_ADJUST', fallback=True)
         self.MANUAL_BRIGHTNESS = self.config.getint(
