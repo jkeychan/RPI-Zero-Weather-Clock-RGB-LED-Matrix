@@ -31,9 +31,6 @@ class SampleBase(object):
         self.parser.add_argument("--led-no-drop-privs", dest="drop_privileges", help="Don't drop privileges from 'root' after initializing the hardware.", action='store_false')
         self.parser.set_defaults(drop_privileges=True)
 
-    def usleep(self, value):
-        time.sleep(value / 1000000.0)
-
     def run(self):
         print("Running")
 
