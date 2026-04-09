@@ -84,6 +84,8 @@ static int SafeInt(const std::string& v, int fallback) noexcept
 
 static size_t CurlWrite(void* contents, size_t size, size_t nmemb, void* userp)
 {
+    if (nmemb != 0 && size > SIZE_MAX / nmemb)
+        return 0;  // overflow would occur — signal error to libcurl
     size_t total = size * nmemb;
     std::string* s = static_cast<std::string*>(userp);
     s->append(static_cast<char*>(contents), total);
@@ -582,15 +584,13 @@ int main(int argc, char** argv)
         time_t now = time(nullptr);
         struct tm tm_buf{};
         localtime_r(&now, &tm_buf);
-        char timebuf[8];
-        if (cfg.time_format == 12)
-            strftime(timebuf, sizeof(timebuf), "%I:%M", &tm_buf);
-        else
-            strftime(timebuf, sizeof(timebuf), "%H:%M", &tm_buf);
-        if (timebuf[0] == '0')
-            timebuf[0] = ' ';
+        char timebuf[16];
+        if (strftime(timebuf, sizeof(timebuf), cfg.time_format == 12 ? "%I:%M" : "%H:%M", &tm_buf) >
+            0)
+            if (timebuf[0] == '0')
+                timebuf[0] = ' ';
 
-        char daybuf[4];
+        char daybuf[16];
         strftime(daybuf, sizeof(daybuf), "%a", &tm_buf);
 
         std::string temp_str = std::to_string(tF) + (cfg.temp_unit == 'F' ? "F" : "C");
@@ -605,10 +605,12 @@ int main(int argc, char** argv)
 
         const std::string& weather_text = show_main_weather ? mainw : desc;
         int est = static_cast<int>(weather_text.size()) * 6;
-        if (!show_main_weather && est > offscreen->width())
+        if (!show_main_weather && !weather_text.empty() && est > offscreen->width())
         {
             rgb_matrix::DrawText(offscreen, font, scroll_x, 24, Color(255, 255, 255),
                                  weather_text.c_str());
+            // scroll_x + est: est > 0 guaranteed by the empty check above, so no
+            // signed overflow — scroll_x resets before it can reach INT_MIN
             if (scroll_x + est < 0)
                 scroll_x = offscreen->width();
             else
@@ -632,7 +634,7 @@ int main(int argc, char** argv)
             scroll_x = offscreen->width();
         }
 
-        usleep(std::max(20, cfg.frame_interval_ms) * 1000);
+        std::this_thread::sleep_for(std::chrono::milliseconds(std::max(20, cfg.frame_interval_ms)));
     }
 
     delete matrix;
