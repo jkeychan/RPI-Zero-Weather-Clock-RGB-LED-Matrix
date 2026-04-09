@@ -1,0 +1,57 @@
+name: Build and Release ARMv6 Binary
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y crossbuild-essential-armhf libcurl4-openssl-dev
+
+      - name: Build librgbmatrix for ARMv6
+        run: |
+          cd matrix/lib
+          make CC=arm-linux-gnueabihf-gcc \
+               CXX=arm-linux-gnueabihf-g++ \
+               CFLAGS="-march=armv6 -mfpu=vfp -mfloat-abi=hard" \
+               CXXFLAGS="-march=armv6 -mfpu=vfp -mfloat-abi=hard"
+          mkdir -p ../../prebuilt
+          cp librgbmatrix.a ../../prebuilt/librgbmatrix_armv6.a
+
+      - name: Cross-compile rgb_display
+        run: |
+          make pi
+          file rgb_display_armv6
+
+      - name: Rename binary for release
+        run: mv rgb_display_armv6 rgb_display
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: rgb_display
+          body: |
+            Precompiled ARMv6 binary for Raspberry Pi Zero W.
+
+            **Install:**
+            ```bash
+            wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/rgb_display
+            chmod +x rgb_display
+            sudo mv rgb_display /home/jeff/Documents/Code/RGB-Display/
+            sudo systemctl restart rgb_display.service
+            ```
+
+            See [BUILDING.md](https://github.com/${{ github.repository }}/blob/main/BUILDING.md) to build from source.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
