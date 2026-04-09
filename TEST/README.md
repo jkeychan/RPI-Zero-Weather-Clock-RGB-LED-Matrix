@@ -1,40 +1,10 @@
-C++ test port (experimental)
+# TEST/
 
-This folder contains an experimental C++ implementation of the weather clock using the C++ API of rpi-rgb-led-matrix. It mirrors the Python app's behavior while running as a compiled binary on Raspberry Pi.
+This directory contained the original C++ prototype. It has been superseded:
 
-Features
-- NTP-like time via system clock; optional SNTP offset planned
-- OpenWeatherMap fetch in a background thread (libcurl)
-- Auto brightness based on sunrise/sunset with configurable min/max
-- 12/24h time, temp color mapping, and simple weather icons
-- Optional Langton's Ant animation
-- Configurable frame interval and throttled updates for low CPU (Pi Zero friendly)
+- `TEST/weather_clock.cc` → `src/weather_clock.cc`
+- `TEST/simple_json.hh` → `include/simple_json.hh`
 
-Prerequisites (on Raspberry Pi)
-- Build and install the C++ matrix library in `matrix/` (this repo submodule)
-  - cd matrix
-  - sudo make build-python
-  - sudo make install-python
-- Dev dependencies
-  - sudo apt-get update
-  - sudo apt-get install -y g++ make libcurl4-openssl-dev
+Build with the root `Makefile`. See `BUILDING.md` for instructions.
 
-Build
-- Option A: using the checked-in submodule (preferred)
-  - cd matrix && sudo make build-python && sudo make install-python
-  - cd ../TEST && make
-    - produces `./weather_clock`
-- Option B: using a system install of the library
-  - If headers/libs are in non-standard locations, pass
-    - make MAT_INC=/path/to/include MAT_LIB=/path/to/lib
-
-Run (sudo required for GPIO)
-- sudo ./weather_clock --led-cols=64 --led-rows=32
-
-Configuration
-- Copy `test-config.ini.sample` to `test-config.ini` and edit values.
-
-Reference
-- Upstream C example: c-example.c
-  - https://github.com/c-base/rpi-rgb-led-matrix/blob/master/examples-api-use/c-example.c
-
+`TEST/Makefile` and `TEST/test-config.ini.sample` have been removed — the TEST/ directory no longer has a standalone build since source files now live under `src/` and `include/`.
