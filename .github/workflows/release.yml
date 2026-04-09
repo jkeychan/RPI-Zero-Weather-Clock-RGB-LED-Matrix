@@ -16,8 +16,9 @@ jobs:
 
       - name: Install dependencies
         run: |
+          sudo dpkg --add-architecture armhf
           sudo apt-get update -q
-          sudo apt-get install -y crossbuild-essential-armhf libcurl4-openssl-dev
+          sudo apt-get install -y crossbuild-essential-armhf libcurl4-openssl-dev:armhf
 
       - name: Build librgbmatrix for ARMv6
         run: |
@@ -31,7 +32,7 @@ jobs:
 
       - name: Cross-compile rgb_display
         run: |
-          make pi
+          make pi CXXFLAGS="-std=c++17 -Wall -Wextra -O2 -I include -I matrix/include -I /usr/include/arm-linux-gnueabihf"
           file rgb_display_armv6
 
       - name: Rename binary for release
