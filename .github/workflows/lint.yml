@@ -1,0 +1,31 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install tools
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y clang-format clang-tidy libcurl4-openssl-dev
+
+      - name: Check clang-format
+        run: |
+          clang-format --dry-run --Werror src/weather_clock.cc include/logger.hh include/simple_json.hh
+
+      - name: Run clang-tidy
+        run: |
+          clang-tidy src/weather_clock.cc \
+            -- -std=c++17 -I include -I matrix/include \
+               -DNDEBUG
