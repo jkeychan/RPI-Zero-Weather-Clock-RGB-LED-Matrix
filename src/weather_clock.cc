@@ -227,11 +227,14 @@ void WeatherThread(const AppConfig& cfg, WeatherState& state)
                 }
                 weather_ready_cv.notify_one();
             }
-            std::this_thread::sleep_for(std::chrono::seconds(interval));
+            // Sleep in 1s chunks so SIGTERM wakes us within 1 second
+            for (int i = 0; i < interval && !interrupt_received; ++i)
+                std::this_thread::sleep_for(std::chrono::seconds(1));
         }
         else
         {
-            std::this_thread::sleep_for(std::chrono::seconds(backoff));
+            for (long i = 0; i < backoff && !interrupt_received; ++i)
+                std::this_thread::sleep_for(std::chrono::seconds(1));
             backoff = std::min(max_backoff, backoff * 2);
         }
     }

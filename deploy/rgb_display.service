@@ -9,6 +9,7 @@ WorkingDirectory=/home/jeff/Documents/Code/RGB-Display
 ExecStart=/home/jeff/Documents/Code/RGB-Display/rgb_display
 Restart=on-failure
 RestartSec=5
+TimeoutStopSec=10
 
 [Install]
 WantedBy=multi-user.target
