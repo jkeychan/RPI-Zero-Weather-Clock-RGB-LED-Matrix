@@ -19,7 +19,10 @@ jobs:
           sudo apt-get update -q
           sudo apt-get install -y crossbuild-essential-armhf libcurl4-openssl-dev
           # Copy curl headers into the ARM cross-compile sysroot
-          sudo cp -rn /usr/include/curl /usr/arm-linux-gnueabihf/include/
+          # On Ubuntu Noble, headers may be in /usr/include/<arch>/curl/ instead of /usr/include/curl/
+          CURL_HDR_DIR=$(dpkg -L libcurl4-openssl-dev | grep 'curl\.h$' | xargs dirname)
+          sudo mkdir -p /usr/arm-linux-gnueabihf/include/curl
+          sudo cp -n "$CURL_HDR_DIR"/*.h /usr/arm-linux-gnueabihf/include/curl/
 
       - name: Build librgbmatrix for ARMv6
         run: |

@@ -9,11 +9,10 @@ on:
     - cron: '0 6 * * 1' # weekly Monday 6am UTC
 
 jobs:
-  zizmor:
-    name: zizmor (workflow security scan)
+  actionlint:
+    name: Actionlint - Workflow Syntax Check
     runs-on: ubuntu-latest
     permissions:
-      security-events: write
       contents: read
 
     steps:
@@ -21,13 +20,42 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Install and run actionlint
+        run: |
+          bash <(curl -sSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          ./actionlint
+
+  zizmor:
+    name: Zizmor - Security Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # ratchet:actions/checkout@v4
+        with:
+          persist-credentials: false
+
       - name: Install zizmor
-        run: pip install zizmor
+        id: install-zizmor
+        uses: jaxxstorm/action-install-gh-release@c5ead9a448b4660cf1e7866ee22e4dc56538031a # ratchet:jaxxstorm/action-install-gh-release@v2
+        with:
+          repo: zizmorcore/zizmor
+          tag: latest
+          rename-to: zizmor
 
       - name: Run zizmor
         env:
           GH_TOKEN: ${{ github.token }}
-        run: zizmor --format sarif . > zizmor.sarif
+        run: |
+          if command -v zizmor >/dev/null 2>&1; then
+            zizmor --format sarif .github/workflows > zizmor.sarif
+          elif [ -f "${HOME}/.local/bin/zizmor" ]; then
+            "${HOME}/.local/bin/zizmor" --format sarif .github/workflows > zizmor.sarif
+          else
+            ./zizmor --format sarif .github/workflows > zizmor.sarif
+          fi
 
       - name: Upload SARIF
         uses: github/codeql-action/upload-sarif@5c8a8a642e79153f5d047b10ec1cba1d1cc65699 # ratchet:github/codeql-action/upload-sarif@v3
@@ -35,8 +63,8 @@ jobs:
           sarif_file: zizmor.sarif
           category: zizmor
 
-  ratchet-check:
-    name: ratchet (pinned action SHAs)
+  ratchet:
+    name: Ratchet - Version Pinning Check
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -47,9 +75,22 @@ jobs:
           persist-credentials: false
 
       - name: Install ratchet
-        run: |
-          curl -sSfL https://github.com/sethvargo/ratchet/releases/latest/download/ratchet_linux_amd64.tar.gz \
-            | tar xz -C /usr/local/bin ratchet
+        id: install-ratchet
+        uses: jaxxstorm/action-install-gh-release@c5ead9a448b4660cf1e7866ee22e4dc56538031a # ratchet:jaxxstorm/action-install-gh-release@v2
+        with:
+          repo: sethvargo/ratchet
+          tag: latest
 
       - name: Check all workflows are pinned
-        run: ratchet check .github/workflows/*.yml
+        run: |
+          if command -v ratchet >/dev/null 2>&1; then
+            RATCHET_CMD="ratchet"
+          elif [ -f "${HOME}/.local/bin/ratchet" ]; then
+            RATCHET_CMD="${HOME}/.local/bin/ratchet"
+          else
+            RATCHET_CMD="./ratchet"
+          fi
+          find .github/workflows -name "*.yml" -o -name "*.yaml" | while read -r file; do
+            echo "Checking: ${file}"
+            "${RATCHET_CMD}" check "${file}"
+          done
