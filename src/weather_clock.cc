@@ -478,7 +478,7 @@ int main(int argc, char** argv)
     options.limit_refresh_rate_hz = 100;
     options.led_rgb_sequence = "RGB";
     options.disable_hardware_pulsing = false;
-    runtime.gpio_slowdown = 2;
+    runtime.gpio_slowdown = 4;  // Pi Zero W (ARMv6 1GHz) needs 4
     runtime.drop_privileges = 1;
 
     AppConfig cfg;
@@ -597,17 +597,17 @@ int main(int argc, char** argv)
         std::string feels_str = std::to_string(fF) + "|";
         std::string humid_str = std::to_string(hum) + "%";
 
-        rgb_matrix::DrawText(offscreen, font, 2, 8, dynamic, daybuf);
-        rgb_matrix::DrawText(offscreen, font, 34, 8, dynamic, timebuf);
-        rgb_matrix::DrawText(offscreen, font, 2, 16, TempColor(tC), temp_str.c_str());
-        rgb_matrix::DrawText(offscreen, font, 33, 16, TempColor(tC), feels_str.c_str());
-        rgb_matrix::DrawText(offscreen, font, 49, 16, HumidityColor(hum), humid_str.c_str());
+        rgb_matrix::DrawText(offscreen, font, 2, 10, dynamic, daybuf);
+        rgb_matrix::DrawText(offscreen, font, 34, 10, dynamic, timebuf);
+        rgb_matrix::DrawText(offscreen, font, 2, 20, TempColor(tC), temp_str.c_str());
+        rgb_matrix::DrawText(offscreen, font, 33, 20, TempColor(tC), feels_str.c_str());
+        rgb_matrix::DrawText(offscreen, font, 49, 20, HumidityColor(hum), humid_str.c_str());
 
         const std::string& weather_text = show_main_weather ? mainw : desc;
         int est = static_cast<int>(weather_text.size()) * 6;
         if (!show_main_weather && !weather_text.empty() && est > offscreen->width())
         {
-            rgb_matrix::DrawText(offscreen, font, scroll_x, 24, Color(255, 255, 255),
+            rgb_matrix::DrawText(offscreen, font, scroll_x, 30, Color(255, 255, 255),
                                  weather_text.c_str());
             // scroll_x + est: est > 0 guaranteed by the empty check above, so no
             // signed overflow — scroll_x resets before it can reach INT_MIN
@@ -618,12 +618,12 @@ int main(int argc, char** argv)
         }
         else
         {
-            rgb_matrix::DrawText(offscreen, font, 2, 24, Color(255, 255, 255),
+            rgb_matrix::DrawText(offscreen, font, 2, 30, Color(255, 255, 255),
                                  weather_text.c_str());
             scroll_x = offscreen->width();
         }
 
-        DrawWeatherIcon(offscreen, mainw, 50, 12);
+        DrawWeatherIcon(offscreen, mainw, 50, 20);  // matches Python ICON_POSITION_X/Y
 
         offscreen = matrix->SwapOnVSync(offscreen);
 
