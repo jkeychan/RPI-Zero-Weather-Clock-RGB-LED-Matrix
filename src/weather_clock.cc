@@ -479,7 +479,7 @@ int main(int argc, char** argv)
     options.cols = 64;
     options.pwm_bits = 11;           // same as Python default; more color depth
     options.led_rgb_sequence = "RGB";
-    options.disable_hardware_pulsing = false;
+    options.disable_hardware_pulsing = true;  // required for Adafruit HAT/Bonnet to reduce flicker
     runtime.gpio_slowdown = 1;       // same as Python default; Pi Zero W handles it
     runtime.drop_privileges = 1;
 
