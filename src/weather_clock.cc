@@ -47,15 +47,15 @@ struct AppConfig
 
 struct WeatherState
 {
-    std::atomic<int> temperature {0};
-    std::atomic<int> temperature_c {0};
-    std::atomic<int> feels_like {0};
-    std::atomic<int> feels_like_c {0};
-    std::atomic<int> humidity {0};
+    std::atomic<int> temperature{0};
+    std::atomic<int> temperature_c{0};
+    std::atomic<int> feels_like{0};
+    std::atomic<int> feels_like_c{0};
+    std::atomic<int> humidity{0};
     std::string main_weather;
     std::string description;
-    std::atomic<long> sunrise {0};
-    std::atomic<long> sunset {0};
+    std::atomic<long> sunrise{0};
+    std::atomic<long> sunset{0};
     std::mutex mu;
 };
 
@@ -578,7 +578,7 @@ int main(int argc, char** argv)
 
         // Time display (thread-safe localtime_r)
         time_t now = time(nullptr);
-        struct tm tm_buf {};
+        struct tm tm_buf = {};
         localtime_r(&now, &tm_buf);
         char timebuf[16];
         if (strftime(timebuf, sizeof(timebuf), cfg.time_format == 12 ? "%I:%M" : "%H:%M", &tm_buf) >

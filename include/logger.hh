@@ -93,7 +93,7 @@ class Logger
             return;
 
         std::time_t now = std::time(nullptr);
-        struct tm tm_buf {};
+        struct tm tm_buf = {};
         localtime_r(&now, &tm_buf);
         char ts[32];
         if (std::strftime(ts, sizeof(ts), "%Y-%m-%d %H:%M:%S", &tm_buf) == 0)
