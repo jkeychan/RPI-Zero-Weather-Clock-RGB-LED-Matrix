@@ -3,3 +3,5 @@ main2.py
 main3.py
 .vscode/settings.json
 .vscode/
+prebuilt/*.a
+rgb_display
