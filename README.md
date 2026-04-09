@@ -56,16 +56,15 @@ The original Python implementation (`main.py`) is preserved for community tinker
 ### Hardware Setup
 
 - **Matrix Connection:** Attach the RGB LED Matrix to the Raspberry Pi Zero using a compatible HAT or bonnet. For a step-by-step guide, see [Adafruit's LED Matrix tutorial](https://learn.adafruit.com/adafruit-rgb-matrix-bonnet-for-raspberry-pi).
-
-
 - **Power Requirements:** Ensure both the Raspberry Pi Zero and the LED Matrix have an adequate power supply. It's crucial for stable operation and to prevent damage.
 - **LED Display**: Connect Raspberry Pi with attached bonnet to the back of the LED Matrix panel using the ribbon cable and power cables.
-### Software Setup
+
+### Software Setup (Python version)
 
 1. **Clone the Repository:**
 
     ```bash
-    git clone https://github.com/yourusername/RPI-Zero-Weather-Clock-RGB-LED-Matrix.git
+    git clone https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix.git
     cd RPI-Zero-Weather-Clock-RGB-LED-Matrix
     ```
 
@@ -78,59 +77,56 @@ The original Python implementation (`main.py`) is preserved for community tinker
     cd matrix
     sudo make build-python
     sudo make install-python
-
     ```
 
 3. **Configuration:**
 
-    Rename `sample-config.ini` to `config.ini` and edit it to configure your weather clock.
+    Copy `sample-config.ini` to `config.ini` and edit it to configure your weather clock.
 
     ```bash
-    mv sample-config.ini config.ini
+    cp sample-config.ini config.ini
     vi config.ini
     ```
 
-    Update `config.ini`:
+    Key settings to update:
 
-    ```
-    # sample-config.ini file
-    # Make any relevant adjustments and then save as config.ini
-
+    ```ini
     [Weather]
-    api_key = YOUR_OPENWEATHERMAP_API_KEY # https://openweathermap.org/api
-    zip_code = YOUR_ZIP_CODE # https://openweathermap.org/current#zip
+    api_key = YOUR_OPENWEATHERMAP_API_KEY
+    zip_code = 10001
 
     [Display]
     time_format = 24
     temp_unit = F
-    text_cycle_interval = 10
-    FONT_PATH=fonts/5x7.bdf
-    FONT_SIZE=10
-    AUTO_BRIGHTNESS_ADJUST = True # Set as False to manually set the value (percentage) in BRIGHTNESS
-    BRIGHTNESS = 20 # Percentage
+    AUTO_BRIGHTNESS_ADJUST = True
+    MIN_BRIGHTNESS = 20
+    MAX_BRIGHTNESS = 60
     LANGTONS_ANT_ENABLED = False
 
     [NTP]
     preferred_server = pool.ntp.org
-    # preferred_server = 127.0.0.1 # If you are running NTP locally
     ```
 
-  The most important and common configuration settings should be adjusted to your preferences:
+  The most important configuration settings:
 
  - `[Weather]`
-   - `api_key`: Your OpenWeatherMap API key. 
+   - `api_key`: Your OpenWeatherMap API key.
    - `zip_code`: Your local ZIP code for weather updates. [OpenWeatherMap Current Weather](https://openweathermap.org/current#zip).
  - `[Display]`
-   - Adjust display settings like `time_format`, `temp_unit` (Fahrenheit or Celsius), `TEXT_COLOR`, and brightness levels.
-   - `LANGTONS_ANT_ENABLED`: Set to `True` to enable the [Langton's Ant](https://en.wikipedia.org/wiki/Langton%27s_ant) animation or `False` (default) to disable it. Default is `False` as the animation consumes high CPU on Pi Zero W.
+   - `time_format`: `24` or `12`.
+   - `temp_unit`: `F` (Fahrenheit) or `C` (Celsius).
+   - `AUTO_BRIGHTNESS_ADJUST`: `True` to ramp brightness with the sun; `False` to use `MANUAL_BRIGHTNESS`.
+   - `LANGTONS_ANT_ENABLED`: Set to `True` to enable the [Langton's Ant](https://en.wikipedia.org/wiki/Langton%27s_ant) animation. Default `False` — the animation consumes high CPU on Pi Zero W.
  - `[NTP]`
-   - `preferred_server`: The NTP server used for time synchronization. `pool.ntp.org` is a reliable choice ([NTP Pool Project](https://www.ntppool.org/en/))
+   - `preferred_server`: The NTP server used for time synchronization. `pool.ntp.org` is a reliable choice ([NTP Pool Project](https://www.ntppool.org/en/)).
 
-4. **Run the Application: (sudo required for [display stability]())**
+4. **Run the Application:**
 
     ```bash
     sudo python3 main.py
     ```
+
+    `sudo` is required for direct GPIO memory access.
 
 ### Connectivity
 
@@ -139,7 +135,7 @@ The original Python implementation (`main.py`) is preserved for community tinker
 
 ## Usage
 
-After setup, the device will display the current time and weather information. You can customize the display and update intervals by modifying the `config.ini` file, tailoring the weather clock to your preferences. You can also find the logs from the program at `/var/log/rgb/app.log` for troubleshooting purposes.
+After setup, the device will display the current time and weather information. You can customize the display and update intervals by modifying the `config.ini` file, tailoring the weather clock to your preferences. Logs are written to `/var/log/rgb/weather_clock.log` for troubleshooting.
 
 For running permanently as a display, use the service files in `deploy/`:
 
@@ -148,6 +144,7 @@ bash deploy/install.sh
 sudo systemctl enable --now rgb_display.service       # C++ binary (recommended)
 # sudo systemctl enable --now rgb_display_python.service  # Python alternative
 ```
+
 ## License
 
 This project is licensed under the GPL 3.0 License - see the LICENSE file for details.
