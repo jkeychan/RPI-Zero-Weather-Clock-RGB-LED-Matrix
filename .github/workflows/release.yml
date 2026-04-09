@@ -66,32 +66,34 @@ jobs:
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REF_NAME: ${{ github.ref_name }}
+          REPOSITORY: ${{ github.repository }}
         run: |
-          cat > release-notes.md << 'EOF'
+          cat > release-notes.md << NOTES
           Precompiled ARMv6 binary for Raspberry Pi Zero W.
 
           **Fresh install:**
-          ```bash
-          git clone https://github.com/${{ github.repository }}.git
+          \`\`\`bash
+          git clone https://github.com/${REPOSITORY}.git
           cd RPI-Zero-Weather-Clock-RGB-LED-Matrix
           cp sample-config.ini config.ini && vi config.ini
           bash deploy/install.sh
-          wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/rgb_display
+          wget https://github.com/${REPOSITORY}/releases/download/${REF_NAME}/rgb_display
           chmod +x rgb_display
           sudo systemctl enable --now rgb_display.service
-          ```
+          \`\`\`
 
           **Update binary only:**
-          ```bash
+          \`\`\`bash
           cd RPI-Zero-Weather-Clock-RGB-LED-Matrix
-          wget -O rgb_display https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/rgb_display
+          wget -O rgb_display https://github.com/${REPOSITORY}/releases/download/${REF_NAME}/rgb_display
           chmod +x rgb_display
           sudo systemctl restart rgb_display.service
-          ```
+          \`\`\`
 
-          See [BUILDING.md](https://github.com/${{ github.repository }}/blob/main/BUILDING.md) to build from source.
-          EOF
-          gh release create "${{ github.ref_name }}" \
-            --title "${{ github.ref_name }}" \
+          See [BUILDING.md](https://github.com/${REPOSITORY}/blob/main/BUILDING.md) to build from source.
+          NOTES
+          gh release create "${REF_NAME}" \
+            --title "${REF_NAME}" \
             --notes-file release-notes.md \
             rgb_display_armv6#rgb_display
