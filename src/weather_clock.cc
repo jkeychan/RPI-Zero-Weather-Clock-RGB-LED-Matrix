@@ -477,10 +477,10 @@ int main(int argc, char** argv)
     options.hardware_mapping = "adafruit-hat";
     options.rows = 32;
     options.cols = 64;
-    options.pwm_bits = 4;            // short PWM cycle eliminates shimmer on Pi Zero
+    options.pwm_bits = 4;  // short PWM cycle eliminates shimmer on Pi Zero
     options.led_rgb_sequence = "RGB";
     options.disable_hardware_pulsing = true;  // required for Adafruit HAT/Bonnet to reduce flicker
-    runtime.gpio_slowdown = 3;       // Pi Zero W timing margin without excess CPU
+    runtime.gpio_slowdown = 3;                // Pi Zero W timing margin without excess CPU
     runtime.drop_privileges = 1;
 
     AppConfig cfg;
