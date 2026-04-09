@@ -15,20 +15,23 @@ This project transforms a Raspberry Pi Zero into a weather clock, displaying rea
 
 The C++ binary eliminates the horizontal line flicker seen in the Python version by calling `librgbmatrix` directly without Python overhead.
 
-Download the latest ARMv6 binary from [Releases](../../releases):
-
 ```bash
-wget https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix/releases/latest/download/rgb_display
-chmod +x rgb_display
-sudo mv rgb_display /home/jeff/Documents/Code/RGB-Display/
-```
+# 1. Clone the repo to your install directory
+git clone https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix.git
+cd RPI-Zero-Weather-Clock-RGB-LED-Matrix
 
-Install the service files and system optimisations:
-
-```bash
+# 2. Configure
 cp sample-config.ini config.ini
 vi config.ini  # add your API key and zip code
+
+# 3. Install service files, log directory, and system optimisations
 bash deploy/install.sh
+
+# 4. Download the precompiled ARMv6 binary
+wget https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix/releases/latest/download/rgb_display
+chmod +x rgb_display
+
+# 5. Enable and start
 sudo systemctl enable --now rgb_display.service
 ```
 

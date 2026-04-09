@@ -77,12 +77,24 @@ brew install llvm
 
 Precompiled ARMv6 binaries are built automatically on every version tag push (`v*.*.*`) via GitHub Actions. Download the latest binary from the [Releases page](../../releases).
 
-**Quick install on Pi:**
+**Quick install on Pi (first time):**
 
 ```bash
+git clone https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix.git
+cd RPI-Zero-Weather-Clock-RGB-LED-Matrix
+cp sample-config.ini config.ini && vi config.ini   # add API key + zip
+bash deploy/install.sh                             # service files, log dir, system tuning
 wget https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix/releases/latest/download/rgb_display
 chmod +x rgb_display
-sudo mv rgb_display /home/jeff/Documents/Code/RGB-Display/
+sudo systemctl enable --now rgb_display.service
+```
+
+**Update binary only (already installed):**
+
+```bash
+cd RPI-Zero-Weather-Clock-RGB-LED-Matrix
+wget -O rgb_display https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix/releases/latest/download/rgb_display
+chmod +x rgb_display
 sudo systemctl restart rgb_display.service
 ```
 
