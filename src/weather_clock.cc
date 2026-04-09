@@ -529,8 +529,6 @@ int main(int argc, char** argv)
     auto to_seconds = [](auto tp)
     { return std::chrono::duration_cast<std::chrono::seconds>(tp).count(); };
     long last_brightness = 0;
-    long last_color = 0;
-    Color dynamic = DynamicRainbowColor(cfg.dynamic_color_interval_seconds);
 
     while (!interrupt_received)
     {
@@ -562,12 +560,8 @@ int main(int argc, char** argv)
             last_brightness = now_s;
         }
 
-        // Dynamic rainbow color update
-        if (now_s - last_color >= cfg.dynamic_color_interval_seconds)
-        {
-            dynamic = DynamicRainbowColor(cfg.dynamic_color_interval_seconds);
-            last_color = now_s;
-        }
+        // Dynamic rainbow: full cycle in 30 s, updated every frame
+        Color dynamic = DynamicRainbowColor(30);
 
         // Copy weather state under lock
         int tF = 0, fF = 0, hum = 0, tC = 0;
