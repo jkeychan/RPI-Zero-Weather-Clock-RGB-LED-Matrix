@@ -24,8 +24,8 @@ jobs:
           cd matrix/lib
           make CC=arm-linux-gnueabihf-gcc \
                CXX=arm-linux-gnueabihf-g++ \
-               CFLAGS="-march=armv6 -mfpu=vfp -mfloat-abi=hard" \
-               CXXFLAGS="-march=armv6 -mfpu=vfp -mfloat-abi=hard"
+               CFLAGS="-march=armv6 -marm -mfpu=vfp -mfloat-abi=hard" \
+               CXXFLAGS="-march=armv6 -marm -mfpu=vfp -mfloat-abi=hard"
           mkdir -p ../../prebuilt
           cp librgbmatrix.a ../../prebuilt/librgbmatrix_armv6.a
 
@@ -44,11 +44,22 @@ jobs:
           body: |
             Precompiled ARMv6 binary for Raspberry Pi Zero W.
 
-            **Install:**
+            **Fresh install:**
             ```bash
+            git clone https://github.com/${{ github.repository }}.git
+            cd RPI-Zero-Weather-Clock-RGB-LED-Matrix
+            cp sample-config.ini config.ini && vi config.ini
+            bash deploy/install.sh
             wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/rgb_display
             chmod +x rgb_display
-            sudo mv rgb_display /home/jeff/Documents/Code/RGB-Display/
+            sudo systemctl enable --now rgb_display.service
+            ```
+
+            **Update binary only:**
+            ```bash
+            cd RPI-Zero-Weather-Clock-RGB-LED-Matrix
+            wget -O rgb_display https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/rgb_display
+            chmod +x rgb_display
             sudo systemctl restart rgb_display.service
             ```
 
