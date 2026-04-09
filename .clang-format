@@ -5,3 +5,4 @@ ColumnLimit: 100
 AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
 BreakBeforeBraces: Allman
+SpaceBeforeCpp11BracedList: true
