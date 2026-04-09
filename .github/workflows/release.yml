@@ -10,15 +10,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # ratchet:actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Install dependencies
         run: |
-          sudo dpkg --add-architecture armhf
           sudo apt-get update -q
-          sudo apt-get install -y crossbuild-essential-armhf libcurl4-openssl-dev:armhf
+          sudo apt-get install -y crossbuild-essential-armhf libcurl4-openssl-dev
+          # Copy curl headers into the ARM cross-compile sysroot
+          sudo cp -rn /usr/include/curl /usr/arm-linux-gnueabihf/include/
 
       - name: Build librgbmatrix for ARMv6
         run: |
@@ -32,14 +33,14 @@ jobs:
 
       - name: Cross-compile rgb_display
         run: |
-          make pi CXXFLAGS="-std=c++17 -Wall -Wextra -O2 -I include -I matrix/include -I /usr/include/arm-linux-gnueabihf"
+          make pi
           file rgb_display_armv6
 
       - name: Rename binary for release
         run: mv rgb_display_armv6 rgb_display
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # ratchet:softprops/action-gh-release@v2
         with:
           files: rgb_display
           body: |
