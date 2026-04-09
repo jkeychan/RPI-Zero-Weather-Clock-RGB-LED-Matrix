@@ -16,13 +16,27 @@ jobs:
 
       - name: Install dependencies
         run: |
+          # Enable armhf multiarch so we can install ARM libcurl for cross-linking
+          sudo dpkg --add-architecture armhf
+          # Restrict existing Ubuntu sources to amd64 to avoid fetch errors on Noble
+          if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then
+            sudo sed -i 's/^Types: deb/Architectures: amd64\nTypes: deb/g' \
+              /etc/apt/sources.list.d/ubuntu.sources
+          fi
+          # Add Ubuntu Ports mirror for armhf packages
+          cat <<'SOURCES' | sudo tee /etc/apt/sources.list.d/armhf-ports.list
+          deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports noble main universe
+          deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports noble-updates main universe
+          deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports noble-security main universe
+          SOURCES
           sudo apt-get update -q
-          sudo apt-get install -y crossbuild-essential-armhf libcurl4-openssl-dev
-          # Copy curl headers into the ARM cross-compile sysroot
-          # On Ubuntu Noble, headers may be in /usr/include/<arch>/curl/ instead of /usr/include/curl/
+          sudo apt-get install -y crossbuild-essential-armhf libcurl4-openssl-dev libcurl4-openssl-dev:armhf
+          # Copy amd64 curl headers into the ARM cross-compile sysroot
           CURL_HDR_DIR=$(dpkg -L libcurl4-openssl-dev | grep 'curl\.h$' | xargs dirname)
           sudo mkdir -p /usr/arm-linux-gnueabihf/include/curl
           sudo cp -n "$CURL_HDR_DIR"/*.h /usr/arm-linux-gnueabihf/include/curl/
+          # Copy ARM libcurl into the cross-linker's sysroot search path
+          sudo cp /usr/lib/arm-linux-gnueabihf/libcurl.so* /usr/arm-linux-gnueabihf/lib/
 
       - name: Build librgbmatrix for ARMv6
         run: |
