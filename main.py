@@ -82,7 +82,7 @@ class SplitDisplay(SampleBase):
         if not self.app_config.AUTO_BRIGHTNESS_ADJUST:
             manual_brightness = self.app_config.MANUAL_BRIGHTNESS
             self.matrix.brightness = manual_brightness
-            logging.info(
+            logging.debug(
                 f"Manual brightness set to {manual_brightness}% at {datetime.datetime.now().strftime('%H:%M')}")
             return
 
@@ -124,8 +124,6 @@ class SplitDisplay(SampleBase):
         fn = WEATHER_DRAW_MAP.get(main_weather)
         if fn:
             fn(self.matrix)
-            if main_weather == 'Thunderstorm':
-                time.sleep(0.1)
 
     def draw_weather_data(self, offscreen_canvas, font, temperature, feels_like, humidity, main_weather, weather_description, show_main_weather, scroll_pos, dynamic_color):
         weather_text = main_weather if show_main_weather else weather_description
@@ -208,9 +206,9 @@ class SplitDisplay(SampleBase):
                 self.adjust_brightness_by_time()
                 last_brightness_update = now_secs
 
-            if (time.time() - last_switch_time) >= text_cycle_interval:
+            if (now_secs - last_switch_time) >= text_cycle_interval:
                 show_main_weather = not show_main_weather
-                last_switch_time = time.time()
+                last_switch_time = now_secs
                 scroll_pos = offscreen_canvas.width  # Reset scroll position on toggle
 
             # Safely snapshot weather values under lock
