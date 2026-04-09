@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*.*.*'
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -15,6 +18,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           submodules: recursive
+          persist-credentials: false
 
       - name: Install dependencies
         run: |
@@ -59,35 +63,35 @@ jobs:
           make pi
           file rgb_display_armv6
 
-      - name: Rename binary for release
-        run: mv rgb_display_armv6 rgb_display
-
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # ratchet:softprops/action-gh-release@v2
-        with:
-          files: rgb_display
-          body: |
-            Precompiled ARMv6 binary for Raspberry Pi Zero W.
-
-            **Fresh install:**
-            ```bash
-            git clone https://github.com/${{ github.repository }}.git
-            cd RPI-Zero-Weather-Clock-RGB-LED-Matrix
-            cp sample-config.ini config.ini && vi config.ini
-            bash deploy/install.sh
-            wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/rgb_display
-            chmod +x rgb_display
-            sudo systemctl enable --now rgb_display.service
-            ```
-
-            **Update binary only:**
-            ```bash
-            cd RPI-Zero-Weather-Clock-RGB-LED-Matrix
-            wget -O rgb_display https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/rgb_display
-            chmod +x rgb_display
-            sudo systemctl restart rgb_display.service
-            ```
-
-            See [BUILDING.md](https://github.com/${{ github.repository }}/blob/main/BUILDING.md) to build from source.
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat > release-notes.md << 'EOF'
+          Precompiled ARMv6 binary for Raspberry Pi Zero W.
+
+          **Fresh install:**
+          ```bash
+          git clone https://github.com/${{ github.repository }}.git
+          cd RPI-Zero-Weather-Clock-RGB-LED-Matrix
+          cp sample-config.ini config.ini && vi config.ini
+          bash deploy/install.sh
+          wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/rgb_display
+          chmod +x rgb_display
+          sudo systemctl enable --now rgb_display.service
+          ```
+
+          **Update binary only:**
+          ```bash
+          cd RPI-Zero-Weather-Clock-RGB-LED-Matrix
+          wget -O rgb_display https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/rgb_display
+          chmod +x rgb_display
+          sudo systemctl restart rgb_display.service
+          ```
+
+          See [BUILDING.md](https://github.com/${{ github.repository }}/blob/main/BUILDING.md) to build from source.
+          EOF
+          gh release create "${{ github.ref_name }}" \
+            --title "${{ github.ref_name }}" \
+            --notes-file release-notes.md \
+            rgb_display_armv6#rgb_display
