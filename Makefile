@@ -20,7 +20,7 @@ PREBUILT     := prebuilt/librgbmatrix_armv6.a
 CXXFLAGS     := -std=c++17 -Wall -Wextra -O2 $(INCLUDES)
 LDFLAGS      := -lcurl -lpthread -lm
 
-CROSS_ARCH   := -march=armv6 -mfpu=vfp -mfloat-abi=hard
+CROSS_ARCH   := -march=armv6 -marm -mfpu=vfp -mfloat-abi=hard
 
 .PHONY: pi lint format clean
 
