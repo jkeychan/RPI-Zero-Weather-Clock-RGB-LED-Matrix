@@ -127,7 +127,7 @@ class SplitDisplay(SampleBase):
             if main_weather == 'Thunderstorm':
                 time.sleep(0.1)
 
-    def draw_weather_data(self, offscreen_canvas, font, temperature, feels_like, humidity, main_weather, weather_description, show_main_weather, scroll_pos):
+    def draw_weather_data(self, offscreen_canvas, font, temperature, feels_like, humidity, main_weather, weather_description, show_main_weather, scroll_pos, dynamic_color):
         weather_text = main_weather if show_main_weather else weather_description
         text_length_est = len(weather_text) * CHAR_WIDTH_ESTIMATE
 
@@ -138,8 +138,6 @@ class SplitDisplay(SampleBase):
         # Set main_weather_color based on the main_weather description or use a default white color
         main_weather_color = graphics.Color(255, 255, 255)  # Default to white
         humidity_color = self.get_humidity_color(humidity)
-        dynamic_color = graphics.Color(
-            *get_color_by_time(self.app_config.DYNAMIC_COLOR_INTERVAL_SECONDS))
 
         now = time.localtime()
         time_str = time.strftime("%H:%M", now)
@@ -238,7 +236,7 @@ class SplitDisplay(SampleBase):
                 last_dynamic_update = now_secs
 
             scroll_pos = self.draw_weather_data(offscreen_canvas, font, temperature, feels_like,
-                                                humidity, main_weather, weather_description, show_main_weather, scroll_pos)
+                                                humidity, main_weather, weather_description, show_main_weather, scroll_pos, dynamic_color)
             offscreen_canvas = self.matrix.SwapOnVSync(offscreen_canvas)
             self.display_weather_icon(main_weather)
             time.sleep(frame_interval)
