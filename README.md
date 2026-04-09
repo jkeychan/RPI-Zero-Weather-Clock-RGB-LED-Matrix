@@ -78,7 +78,7 @@ This project transforms a Raspberry Pi Zero into a weather clock, displaying rea
     FONT_SIZE=10
     AUTO_BRIGHTNESS_ADJUST = True # Set as False to manually set the value (percentage) in BRIGHTNESS
     BRIGHTNESS = 20 # Percentage
-    LANGTONS_ANT_ENABLED = True
+    LANGTONS_ANT_ENABLED = False
 
     [NTP]
     preferred_server = pool.ntp.org
@@ -92,7 +92,7 @@ This project transforms a Raspberry Pi Zero into a weather clock, displaying rea
    - `zip_code`: Your local ZIP code for weather updates. [OpenWeatherMap Current Weather](https://openweathermap.org/current#zip).
  - `[Display]`
    - Adjust display settings like `time_format`, `temp_unit` (Fahrenheit or Celsius), `TEXT_COLOR`, and brightness levels.
-   - `LANGTONS_ANT_ENABLED`: Set to `True` to enable the [Langton's Ant](https://en.wikipedia.org/wiki/Langton%27s_ant) animation or `False` to disable it.
+   - `LANGTONS_ANT_ENABLED`: Set to `True` to enable the [Langton's Ant](https://en.wikipedia.org/wiki/Langton%27s_ant) animation or `False` (default) to disable it. Default is `False` as the animation consumes high CPU on Pi Zero W.
  - `[NTP]`
    - `preferred_server`: The NTP server used for time synchronization. `pool.ntp.org` is a reliable choice ([NTP Pool Project](https://www.ntppool.org/en/))
 
