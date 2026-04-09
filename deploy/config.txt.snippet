@@ -1,0 +1,12 @@
+# Pi Zero W performance optimisations for headless RGB display use
+# Apply these changes to /boot/config.txt
+#
+# 1. Reduce GPU memory to minimum — no HDMI output needed
+gpu_mem=16
+#
+# 2. Disable camera/display auto-detect and the vc4-kms-v3d GPU overlay
+#    (these load GPU drivers that serve no purpose on a headless device)
+# camera_auto_detect=1   <-- comment this out
+# display_auto_detect=1  <-- comment this out
+# dtoverlay=vc4-kms-v3d  <-- comment this out
+# max_framebuffers=2     <-- comment this out

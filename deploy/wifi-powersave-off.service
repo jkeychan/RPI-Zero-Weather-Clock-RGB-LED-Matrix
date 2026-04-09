@@ -1,0 +1,12 @@
+[Unit]
+Description=Disable WiFi power saving
+After=wpa_supplicant@wlan0.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/iw dev wlan0 set power_save off
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
