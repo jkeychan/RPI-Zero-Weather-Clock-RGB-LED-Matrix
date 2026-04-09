@@ -11,6 +11,33 @@ This project transforms a Raspberry Pi Zero into a weather clock, displaying rea
 - **Adaptive Brightness:** Features automatic brightness adjustment based on the time of day, enhancing visibility and comfort.
 - **Customizable Display:** Allows for extensive customization, including temperature units, text colors, and enabling/disabling the Langton's Ant animation for dynamic background activity.
 
+## Precompiled Binary (Recommended)
+
+The C++ binary eliminates the horizontal line flicker seen in the Python version by calling `librgbmatrix` directly without Python overhead.
+
+Download the latest ARMv6 binary from [Releases](../../releases):
+
+```bash
+wget https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix/releases/latest/download/rgb_display
+chmod +x rgb_display
+sudo mv rgb_display /home/jeff/Documents/Code/RGB-Display/
+```
+
+Install the service files and system optimisations:
+
+```bash
+cp sample-config.ini config.ini
+vi config.ini  # add your API key and zip code
+bash deploy/install.sh
+sudo systemctl enable --now rgb_display.service
+```
+
+See [BUILDING.md](BUILDING.md) to build from source (native on Pi or cross-compiled from macOS).
+
+## Python Version
+
+The original Python implementation (`main.py`) is preserved for community tinkering and as a reference implementation. It works on Pi Zero W — see the setup instructions below. Use `deploy/rgb_display_python.service` if you prefer it.
+
 ## Getting Started
 
 ### Prerequisites
@@ -111,25 +138,12 @@ This project transforms a Raspberry Pi Zero into a weather clock, displaying rea
 
 After setup, the device will display the current time and weather information. You can customize the display and update intervals by modifying the `config.ini` file, tailoring the weather clock to your preferences. You can also find the logs from the program at `/var/log/rgb/app.log` for troubleshooting purposes.
 
-For running permanently as a display you will want the program to run every time it is power cycled. It is strongly [recommended to create](https://www.fosslinux.com/111815/a-guide-to-creating-linux-services-with-systemd.htm) a `systemd` service for the program to ensure it stays running.
+For running permanently as a display, use the service files in `deploy/`:
 
 ```bash
-# /etc/systemd/system/rgb_display.service
-
-[Unit]
-Description=RGB Display Service
-After=network.target
-
-[Service]
-ExecStart=/usr/bin/python /opt/RGB-Display/main.py --led-cols=64 --led-rows=32
-WorkingDirectory=/home/$USER/RPI-Zero-Weather-Clock-RGB-LED-Matrix
-StandardOutput=append:/var/log/rgb-matrix.log
-StandardError=append:/var/log/rgb-matrix.log
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
+bash deploy/install.sh
+sudo systemctl enable --now rgb_display.service       # C++ binary (recommended)
+# sudo systemctl enable --now rgb_display_python.service  # Python alternative
 ```
 ## License
 
