@@ -473,15 +473,14 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    // Anti-flicker defaults for Pi Zero W + Adafruit HAT — hardcoded, not flag-overridable
+    // Matrix settings for Pi Zero W + Adafruit Bonnet — hardcoded, not flag-overridable
     options.hardware_mapping = "adafruit-hat";
     options.rows = 32;
     options.cols = 64;
-    options.pwm_bits = 4;
-    options.limit_refresh_rate_hz = 100;
+    options.pwm_bits = 11;           // same as Python default; more color depth
     options.led_rgb_sequence = "RGB";
     options.disable_hardware_pulsing = false;
-    runtime.gpio_slowdown = 4;  // Pi Zero W (ARMv6 1GHz) needs 4
+    runtime.gpio_slowdown = 1;       // same as Python default; Pi Zero W handles it
     runtime.drop_privileges = 1;
 
     AppConfig cfg;
