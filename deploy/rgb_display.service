@@ -1,0 +1,14 @@
+[Unit]
+Description=RGB LED Weather Clock (C++)
+After=network-online.target systemd-time-wait-sync.service
+Wants=network-online.target systemd-time-wait-sync.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/jeff/Documents/Code/RGB-Display
+ExecStart=/home/jeff/Documents/Code/RGB-Display/rgb_display
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

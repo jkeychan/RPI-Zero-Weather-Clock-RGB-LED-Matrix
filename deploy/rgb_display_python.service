@@ -1,0 +1,14 @@
+[Unit]
+Description=RGB LED Weather Clock (Python)
+After=network-online.target systemd-time-wait-sync.service
+Wants=network-online.target systemd-time-wait-sync.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/jeff/Documents/Code/RGB-Display
+ExecStart=/usr/bin/python3 -O /home/jeff/Documents/Code/RGB-Display/main.py --led-cols=64
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

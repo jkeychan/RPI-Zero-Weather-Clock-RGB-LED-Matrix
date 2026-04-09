@@ -69,19 +69,22 @@ for svc in ModemManager serial-getty@ttyS0; do
 done
 
 echo ""
-echo "=== Updating rgb_display.service with Python -O flag ==="
-SERVICE=/etc/systemd/system/rgb_display.service
-if [ -f "$SERVICE" ]; then
-    if ! grep -q "python3 -O" "$SERVICE"; then
-        sudo sed -i 's|ExecStart=/usr/bin/python3 |ExecStart=/usr/bin/python3 -O |' "$SERVICE"
-        sudo systemctl daemon-reload
-        echo "  added -O flag"
-    else
-        echo "  -O flag already present"
-    fi
-else
-    echo "  WARNING: $SERVICE not found — install the service first"
-fi
+echo "=== Installing display services ==="
+# Python service (legacy — kept for reference and easy rollback)
+sudo cp "$SCRIPT_DIR/rgb_display_python.service" /etc/systemd/system/
+echo "  installed: rgb_display_python.service"
+
+# C++ service (preferred — lower CPU, no flicker)
+sudo cp "$SCRIPT_DIR/rgb_display.service" /etc/systemd/system/
+sudo systemctl daemon-reload
+echo "  installed: rgb_display.service"
+echo ""
+echo "  To start the C++ binary (recommended):"
+echo "    sudo systemctl enable --now rgb_display.service"
+echo ""
+echo "  To use the Python version instead:"
+echo "    sudo systemctl disable --now rgb_display.service"
+echo "    sudo systemctl enable --now rgb_display_python.service"
 
 echo ""
 echo "Done. Reboot for /boot/config.txt changes to take effect."
