@@ -54,6 +54,11 @@ patch_config "dtoverlay=vc4-kms-v3d" 1 ""
 patch_config "max_framebuffers" 1 ""
 
 echo ""
+echo "=== Enabling NTP time sync (systemd-timesyncd) ==="
+sudo timedatectl set-ntp true
+echo "  NTP sync: $(timedatectl show -p NTPSynchronized --value 2>/dev/null || echo 'unknown')"
+
+echo ""
 echo "=== Disabling unnecessary services ==="
 for svc in ModemManager serial-getty@ttyS0; do
     if systemctl is-enabled "$svc" 2>/dev/null | grep -q enabled; then
