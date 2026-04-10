@@ -477,9 +477,10 @@ int main(int argc, char** argv)
     options.hardware_mapping = "adafruit-hat";
     options.rows = 32;
     options.cols = 64;
-    options.pwm_bits = 11;  // default PWM depth; pwm_bits=4 causes blank display on Pi Zero W
+    options.pwm_bits = 6;   // ≤5 causes blank display on Pi Zero W adafruit-hat; 6 reduces shimmer
     options.led_rgb_sequence = "RGB";
-    options.disable_hardware_pulsing = true;  // required for Adafruit HAT/Bonnet to reduce flicker
+    options.disable_hardware_pulsing = true;  // required for Adafruit HAT/Bonnet
+    options.limit_refresh_rate_hz = 100;      // cap refresh to reduce shimmer
     runtime.gpio_slowdown = 3;                // Pi Zero W timing margin without excess CPU
     runtime.drop_privileges = 1;
 
