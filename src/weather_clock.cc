@@ -477,7 +477,7 @@ int main(int argc, char** argv)
     options.hardware_mapping = "adafruit-hat";
     options.rows = 32;
     options.cols = 64;
-    options.pwm_bits = 6;   // ≤5 causes blank display on Pi Zero W adafruit-hat; 6 reduces shimmer
+    options.pwm_bits = 6;  // ≤5 causes blank display on Pi Zero W adafruit-hat; 6 reduces shimmer
     options.led_rgb_sequence = "RGB";
     options.disable_hardware_pulsing = true;  // required for Adafruit HAT/Bonnet
     options.limit_refresh_rate_hz = 100;      // cap refresh to reduce shimmer
