@@ -2,20 +2,18 @@
 Checks: >
   clang-diagnostic-*,
   clang-analyzer-*,
-  modernize-use-nullptr,
-  modernize-use-override,
-  modernize-use-auto,
-  modernize-use-using,
-  modernize-avoid-c-arrays,
-  modernize-use-default-member-init,
-  modernize-use-emplace,
-  modernize-redundant-void-arg,
+  bugprone-*,
+  misc-*,
+  performance-*,
+  modernize-*,
+  readability-*,
   cppcoreguidelines-avoid-goto,
   cppcoreguidelines-init-variables,
-  performance-unnecessary-copy-initialization,
-  performance-move-const-arg,
-  readability-braces-around-statements,
-  readability-qualified-auto,
-  -modernize-use-trailing-return-type
-WarningsAsErrors: ""
-HeaderFilterRegex: "include/.*"
+  -modernize-use-trailing-return-type,
+  -modernize-use-nodiscard,
+  -readability-magic-numbers,
+  -misc-include-cleaner
+
+WarningsAsErrors: "clang-diagnostic-*,clang-analyzer-*,bugprone-*"
+HeaderFilterRegex: "(include|src)/.*"
+AnalyzeTemporaryDtors: true
