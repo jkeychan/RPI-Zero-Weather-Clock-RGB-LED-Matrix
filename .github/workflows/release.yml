@@ -11,48 +11,35 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    container:
+      image: debian:bookworm-slim
 
     steps:
+      # git must be present before checkout runs inside the container
+      - name: Bootstrap container
+        run: apt-get update -q && apt-get install -y --no-install-recommends git ca-certificates
+
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           submodules: recursive
           persist-credentials: false
 
-      - name: Install dependencies
+      - name: Install cross-compile dependencies
         run: |
-          # Enable armhf multiarch so we can install ARM libcurl for cross-linking
-          sudo dpkg --add-architecture armhf
-          # Restrict existing Ubuntu sources to amd64 to avoid fetch errors on Noble
-          if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then
-            sudo sed -i 's/^Types: deb/Architectures: amd64\nTypes: deb/g' \
-              /etc/apt/sources.list.d/ubuntu.sources
-          fi
-          # Add Ubuntu Ports mirror for armhf packages
-          cat <<'SOURCES' | sudo tee /etc/apt/sources.list.d/armhf-ports.list
-          deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports noble main universe
-          deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports noble-updates main universe
-          deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports noble-security main universe
-          SOURCES
-          sudo apt-get update -q
-          # Install amd64 dev package (headers) and armhf runtime library (for linking)
-          # libcurl4-openssl-dev:armhf conflicts with amd64 via shared curl-config binary,
-          # so install just the runtime lib and create the .so symlink manually
-          sudo apt-get install -y crossbuild-essential-armhf \
-            libcurl4-openssl-dev libcurl4t64:armhf \
-            libmosquitto-dev libmosquitto1:armhf
-          # Copy amd64 curl headers into the ARM cross-compile sysroot
-          CURL_HDR_DIR=$(dpkg -L libcurl4-openssl-dev | grep 'curl\.h$' | xargs dirname)
-          sudo mkdir -p /usr/arm-linux-gnueabihf/include/curl
-          sudo cp -n "$CURL_HDR_DIR"/*.h /usr/arm-linux-gnueabihf/include/curl/
-          # Copy ARM libcurl into the cross-linker's sysroot search path and create .so symlink
-          sudo cp /usr/lib/arm-linux-gnueabihf/libcurl.so.4* /usr/arm-linux-gnueabihf/lib/
-          sudo ln -sf libcurl.so.4 /usr/arm-linux-gnueabihf/lib/libcurl.so
-          # Copy mosquitto header and ARM libmosquitto into the cross-compile sysroot
-          sudo cp /usr/include/mosquitto.h /usr/arm-linux-gnueabihf/include/
-          sudo cp /usr/lib/arm-linux-gnueabihf/libmosquitto.so.1* /usr/arm-linux-gnueabihf/lib/
-          sudo ln -sf libmosquitto.so.1 /usr/arm-linux-gnueabihf/lib/libmosquitto.so
+          dpkg --add-architecture armhf
+          apt-get update -q
+          apt-get install -y --no-install-recommends \
+            crossbuild-essential-armhf \
+            libcurl4-openssl-dev \
+            libcurl4:armhf \
+            libmosquitto-dev \
+            libmosquitto1:armhf
+          # Create .so symlinks so the cross-linker resolves -lcurl and -lmosquitto.
+          # The dev packages for armhf conflict with their amd64 counterparts via
+          # shared binaries (curl-config etc.), so we install only the runtime libs
+          # and create the linker symlinks manually.
+          ln -sf libcurl.so.4 /usr/lib/arm-linux-gnueabihf/libcurl.so
+          ln -sf libmosquitto.so.1 /usr/lib/arm-linux-gnueabihf/libmosquitto.so
 
       - name: Build librgbmatrix for ARMv6
         run: |
@@ -68,7 +55,33 @@ jobs:
         run: |
           make pi
           file rgb_display_armv6
-          cp rgb_display_armv6 rgb_display
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: rgb_display
+          path: rgb_display_armv6
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: rgb_display
+
+      - name: Verify binary
+        run: |
+          mv rgb_display_armv6 rgb_display
+          file rgb_display
+          objdump -p rgb_display | grep GLIBC | sort -t_ -k3 -V | tail -3
 
       - name: Create GitHub Release
         env:
@@ -78,6 +91,7 @@ jobs:
         run: |
           cat > release-notes.md << NOTES
           Precompiled ARMv6 binary for Raspberry Pi Zero W.
+          Requires **Raspberry Pi OS Bookworm** (Debian 12) or later.
 
           **What's new in ${REF_NAME}:**
           - Optional MQTT weather source — subscribe to a local sensor broker and display live temperature/humidity instead of (or alongside) OpenWeatherMap
