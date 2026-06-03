@@ -2,6 +2,15 @@
 
 # RPI Zero Weather Clock RGB LED Matrix
 
+[![Build](https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix/actions/workflows/release.yml/badge.svg)](https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix/actions/workflows/release.yml)
+[![Lint](https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix/actions/workflows/lint.yml/badge.svg)](https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix/actions/workflows/lint.yml)
+[![CodeQL](https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix/actions/workflows/codeql.yml/badge.svg)](https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix/actions/workflows/codeql.yml)
+[![Release](https://img.shields.io/github/v/release/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix?logo=github)](https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix/releases/latest)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%20Zero%20W-C51A4A?logo=raspberrypi&logoColor=white)](https://www.raspberrypi.com/products/raspberry-pi-zero-w/)
+[![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white)](src/weather_clock.cc)
+[![MQTT](https://img.shields.io/badge/MQTT-optional-8A2BE2)](https://mosquitto.org/)
+
 A Raspberry Pi Zero weather clock that displays real-time weather and time on a 64×32 RGB LED Matrix. Weather data comes from OpenWeatherMap and, optionally, a local MQTT sensor that overrides the cloud reading with live indoor/outdoor measurements.
 
 The project ships two fully functional implementations:
