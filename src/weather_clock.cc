@@ -262,15 +262,19 @@ struct MqttCtx
 {
     const AppConfig* cfg;
     WeatherState*    state;
+    Logger*          logger;
 };
 
-void MqttWeatherThread(const AppConfig& cfg, WeatherState& state)
+void MqttWeatherThread(const AppConfig& cfg, WeatherState& state, Logger& logger)
 {
+    logger.Info("MQTT thread started, connecting to " + cfg.mqtt_broker + ":" +
+                std::to_string(cfg.mqtt_port) + " topic=" + cfg.mqtt_topic);
     mosquitto_lib_init();
-    MqttCtx ctx{&cfg, &state};
+    MqttCtx ctx{&cfg, &state, &logger};
     struct mosquitto* mosq = mosquitto_new(nullptr, true, &ctx);
     if (!mosq)
     {
+        logger.Error("MQTT mosquitto_new failed — out of memory");
         mosquitto_lib_cleanup();
         return;
     }
@@ -278,9 +282,13 @@ void MqttWeatherThread(const AppConfig& cfg, WeatherState& state)
     mosquitto_connect_callback_set(
         mosq, [](struct mosquitto* m, void* obj, int rc)
         {
-            if (rc != 0)
-                return;
             auto* c = static_cast<MqttCtx*>(obj);
+            if (rc != 0)
+            {
+                c->logger->Warning("MQTT broker rejected connection rc=" + std::to_string(rc));
+                return;
+            }
+            c->logger->Info("MQTT connected, subscribing to " + c->cfg->mqtt_topic);
             mosquitto_subscribe(m, nullptr, c->cfg->mqtt_topic.c_str(), 0);
         });
 
@@ -296,7 +304,10 @@ void MqttWeatherThread(const AppConfig& cfg, WeatherState& state)
             auto temp_f = json_number(payload, "tempF");
             auto hum    = json_number(payload, "humidity");
             if (!temp_f || !hum)
+            {
+                c->logger->Warning("MQTT message missing tempF or humidity: " + payload);
                 return;
+            }
 
             double tf = *temp_f;
             double tc = (tf - 32.0) * 5.0 / 9.0;
@@ -317,6 +328,11 @@ void MqttWeatherThread(const AppConfig& cfg, WeatherState& state)
                 c->state->mqtt_last_received = time(nullptr);
             }
 
+            c->logger->Info("MQTT update: " + std::to_string(t_display) + "°" +
+                            std::string(1, c->cfg->temp_unit) + " " +
+                            std::to_string(static_cast<int>(std::lround(*hum))) + "%RH" +
+                            (condition ? " " + *condition : std::string()));
+
             {
                 std::lock_guard<std::mutex> lk(weather_ready_mutex);
                 weather_fetched = true;
@@ -328,6 +344,7 @@ void MqttWeatherThread(const AppConfig& cfg, WeatherState& state)
     const long max_backoff = 300;
     while (!interrupt_received)
     {
+        logger.Info("MQTT connecting to " + cfg.mqtt_broker + ":" + std::to_string(cfg.mqtt_port));
         int rc = mosquitto_connect(mosq, cfg.mqtt_broker.c_str(), cfg.mqtt_port, 60);
         if (rc == MOSQ_ERR_SUCCESS)
         {
@@ -336,9 +353,17 @@ void MqttWeatherThread(const AppConfig& cfg, WeatherState& state)
             {
                 int loop_rc = mosquitto_loop(mosq, 100, 1);
                 if (loop_rc != MOSQ_ERR_SUCCESS)
+                {
+                    logger.Warning("MQTT loop error rc=" + std::to_string(loop_rc) + ", reconnecting");
                     break;
+                }
             }
             mosquitto_disconnect(mosq);
+        }
+        else
+        {
+            logger.Warning("MQTT mosquitto_connect failed rc=" + std::to_string(rc) +
+                           ", retrying in " + std::to_string(backoff) + "s");
         }
         for (long i = 0; i < backoff && !interrupt_received; ++i)
             std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -347,6 +372,7 @@ void MqttWeatherThread(const AppConfig& cfg, WeatherState& state)
 
     mosquitto_destroy(mosq);
     mosquitto_lib_cleanup();
+    logger.Info("MQTT thread exiting");
 }
 
 // Maps Celsius [-40, 50] to a smooth HSV color: blue=cold, red=hot.
@@ -620,7 +646,7 @@ int main(int argc, char** argv)
     std::thread wt(WeatherThread, std::ref(cfg), std::ref(weather));
     std::thread mt;
     if (cfg.mqtt_enabled)
-        mt = std::thread(MqttWeatherThread, std::ref(cfg), std::ref(weather));
+        mt = std::thread(MqttWeatherThread, std::ref(cfg), std::ref(weather), std::ref(logger));
 
     // Wait up to 15s for the first weather fetch before starting the display loop
     {
