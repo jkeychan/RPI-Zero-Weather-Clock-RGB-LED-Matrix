@@ -62,6 +62,7 @@ struct WeatherState
     std::atomic<long> sunrise{0};
     std::atomic<long> sunset{0};
     std::atomic<time_t> mqtt_last_received{0};
+    std::atomic<uint32_t> version{0};
     std::mutex mu;
 };
 
@@ -243,6 +244,7 @@ void WeatherThread(const AppConfig& cfg, WeatherState& state)
                 state.sunset = static_cast<long>(*ss);
                 state.main_weather = *mainw;
                 state.description = *desc;
+                state.version.fetch_add(1, std::memory_order_release);
                 backoff = 5;
 
                 // Signal first-fetch wait in main()
@@ -337,6 +339,7 @@ void MqttWeatherThread(const AppConfig& cfg, WeatherState& state, Logger& logger
                 if (condition)
                     c->state->main_weather = *condition;
                 c->state->mqtt_last_received = time(nullptr);
+                c->state->version.fetch_add(1, std::memory_order_release);
             }
 
             c->logger->Info("MQTT update: " + std::to_string(t_display) + "°" +
@@ -685,6 +688,9 @@ int main(int argc, char** argv)
     int cached_minute = -1;
     int last_tF = -9999, last_fF = -9999, last_hum = -9999;
     std::string temp_str, feels_str, humid_str;
+    Color temp_color{255, 255, 255}, humid_color{255, 255, 255};
+    uint32_t last_weather_version = UINT32_MAX;
+    std::string mainw, desc;
 
     while (!interrupt_received)
     {
@@ -719,17 +725,20 @@ int main(int argc, char** argv)
         // Dynamic rainbow: full cycle in 30 s, updated every frame
         Color dynamic = DynamicRainbowColor(30);
 
-        // Copy weather state under lock
-        int tF = 0, fF = 0, hum = 0, tC = 0;
-        std::string mainw, desc;
+        // Atomics are safe to read without the lock
+        int tF = weather.temperature.load();
+        int tC = weather.temperature_c.load();
+        int fF = weather.feels_like.load();
+        int hum = weather.humidity.load();
+
+        // Strings only when version changes (weather updates every ~10 min)
+        uint32_t ver = weather.version.load(std::memory_order_acquire);
+        if (ver != last_weather_version)
         {
             std::lock_guard<std::mutex> lk(weather.mu);
-            tF = weather.temperature.load();
-            tC = weather.temperature_c.load();
-            fF = weather.feels_like.load();
-            hum = weather.humidity.load();
             mainw = weather.main_weather;
             desc = weather.description;
+            last_weather_version = ver;
         }
 
         // Time display: reformat only when the minute changes
@@ -746,7 +755,7 @@ int main(int argc, char** argv)
             strftime(daybuf, sizeof(daybuf), "%a", &tm_buf);
         }
 
-        // Weather strings: only rebuild when values change
+        // Weather strings and colors: only rebuild when values change
         if (tF != last_tF || fF != last_fF || hum != last_hum)
         {
             last_tF = tF;
@@ -755,13 +764,15 @@ int main(int argc, char** argv)
             temp_str = std::to_string(tF) + (cfg.temp_unit == 'F' ? "F" : "C");
             feels_str = std::to_string(fF) + "|";
             humid_str = std::to_string(hum) + "%";
+            temp_color = TempColor(tC);
+            humid_color = HumidityColor(hum);
         }
 
         rgb_matrix::DrawText(offscreen, font, 2, 10, dynamic, daybuf);
         rgb_matrix::DrawText(offscreen, font, 34, 10, dynamic, timebuf);
-        rgb_matrix::DrawText(offscreen, font, 2, 20, TempColor(tC), temp_str.c_str());
-        rgb_matrix::DrawText(offscreen, font, 33, 20, TempColor(tC), feels_str.c_str());
-        rgb_matrix::DrawText(offscreen, font, 49, 20, HumidityColor(hum), humid_str.c_str());
+        rgb_matrix::DrawText(offscreen, font, 2, 20, temp_color, temp_str.c_str());
+        rgb_matrix::DrawText(offscreen, font, 33, 20, temp_color, feels_str.c_str());
+        rgb_matrix::DrawText(offscreen, font, 49, 20, humid_color, humid_str.c_str());
 
         const std::string& weather_text = show_main_weather ? mainw : desc;
         int est = static_cast<int>(weather_text.size()) * 6;
