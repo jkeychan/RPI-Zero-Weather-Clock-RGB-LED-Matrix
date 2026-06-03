@@ -46,7 +46,7 @@ def _run_loop(client: mqtt.Client, broker: str, port: int) -> None:
     while True:
         try:
             client.connect(broker, port, keepalive=60)
-            client.loop_forever(retry_first_connection=True)
+            client.loop_forever()
         except Exception as e:
             logging.error(f"MQTT: connection error to {broker}:{port}: {e}. Retrying in 30s")
             time.sleep(30)
@@ -59,18 +59,18 @@ def start_mqtt_weather_thread(
     topic: str,
     temp_unit: str,
 ) -> None:
-    client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION1)
+    client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
 
-    def on_connect(client, userdata, flags, rc):
-        if rc == 0:
-            logging.info(f"MQTT: connected to {broker}:{port}, subscribing to {topic}")
-            client.subscribe(topic)
-        else:
-            logging.warning(f"MQTT: connect failed rc={rc}")
+    def on_connect(client, userdata, flags, reason_code, properties):
+        if reason_code.is_failure:
+            logging.warning(f"MQTT: connect failed: {reason_code}")
+            return
+        logging.info(f"MQTT: connected to {broker}:{port}, subscribing to {topic}")
+        client.subscribe(topic)
 
-    def on_disconnect(client, userdata, rc):
-        if rc != 0:
-            logging.warning(f"MQTT: disconnected rc={rc}, will reconnect")
+    def on_disconnect(client, userdata, disconnect_flags, reason_code, properties):
+        if reason_code.value != 0:
+            logging.warning(f"MQTT: disconnected: {reason_code}, will reconnect")
 
     client.on_connect = on_connect
     client.on_message = _make_on_message_handler(global_vars, temp_unit)
