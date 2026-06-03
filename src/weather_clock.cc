@@ -225,12 +225,20 @@ void WeatherThread(const AppConfig& cfg, WeatherState& state)
                     t = static_cast<int>(std::lround((t * 9.0 / 5.0) + 32));
                     f = static_cast<int>(std::lround((f * 9.0 / 5.0) + 32));
                 }
+                // If MQTT data was received within the last 15 minutes, let it own
+                // temperature and humidity — OWM still provides the fields the
+                // sensor cannot (feels_like, sunrise/sunset, description).
+                bool mqtt_fresh = state.mqtt_last_received.load() != 0 &&
+                                  (time(nullptr) - state.mqtt_last_received.load()) < 900;
                 std::lock_guard<std::mutex> lk(state.mu);
-                state.temperature = t;
-                state.temperature_c = t_c;
+                if (!mqtt_fresh)
+                {
+                    state.temperature = t;
+                    state.temperature_c = t_c;
+                    state.humidity = static_cast<int>(std::lround(*hum));
+                }
                 state.feels_like = f;
                 state.feels_like_c = f_c;
-                state.humidity = static_cast<int>(std::lround(*hum));
                 state.sunrise = static_cast<long>(*sr);
                 state.sunset = static_cast<long>(*ss);
                 state.main_weather = *mainw;
