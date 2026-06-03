@@ -680,6 +680,12 @@ int main(int argc, char** argv)
     { return std::chrono::duration_cast<std::chrono::seconds>(tp).count(); };
     long last_brightness = 0;
 
+    char timebuf[16] = {};
+    char daybuf[16] = {};
+    int cached_minute = -1;
+    int last_tF = -9999, last_fF = -9999, last_hum = -9999;
+    std::string temp_str, feels_str, humid_str;
+
     while (!interrupt_received)
     {
         offscreen->Clear();
@@ -726,22 +732,30 @@ int main(int argc, char** argv)
             desc = weather.description;
         }
 
-        // Time display (thread-safe localtime_r)
+        // Time display: reformat only when the minute changes
         time_t now = time(nullptr);
         struct tm tm_buf = {};
         localtime_r(&now, &tm_buf);
-        char timebuf[16];
-        if (strftime(timebuf, sizeof(timebuf), cfg.time_format == 12 ? "%I:%M" : "%H:%M", &tm_buf) >
-            0)
-            if (timebuf[0] == '0')
-                timebuf[0] = ' ';
+        if (tm_buf.tm_min != cached_minute)
+        {
+            cached_minute = tm_buf.tm_min;
+            if (strftime(timebuf, sizeof(timebuf), cfg.time_format == 12 ? "%I:%M" : "%H:%M",
+                         &tm_buf) > 0)
+                if (timebuf[0] == '0')
+                    timebuf[0] = ' ';
+            strftime(daybuf, sizeof(daybuf), "%a", &tm_buf);
+        }
 
-        char daybuf[16];
-        strftime(daybuf, sizeof(daybuf), "%a", &tm_buf);
-
-        std::string temp_str = std::to_string(tF) + (cfg.temp_unit == 'F' ? "F" : "C");
-        std::string feels_str = std::to_string(fF) + "|";
-        std::string humid_str = std::to_string(hum) + "%";
+        // Weather strings: only rebuild when values change
+        if (tF != last_tF || fF != last_fF || hum != last_hum)
+        {
+            last_tF = tF;
+            last_fF = fF;
+            last_hum = hum;
+            temp_str = std::to_string(tF) + (cfg.temp_unit == 'F' ? "F" : "C");
+            feels_str = std::to_string(fF) + "|";
+            humid_str = std::to_string(hum) + "%";
+        }
 
         rgb_matrix::DrawText(offscreen, font, 2, 10, dynamic, daybuf);
         rgb_matrix::DrawText(offscreen, font, 34, 10, dynamic, timebuf);
@@ -773,14 +787,12 @@ int main(int argc, char** argv)
 
         offscreen = matrix->SwapOnVSync(offscreen);
 
-        if (difftime(time(nullptr), last_switch) >= cfg.text_cycle_interval)
+        if (difftime(now, last_switch) >= cfg.text_cycle_interval)
         {
             show_main_weather = !show_main_weather;
             last_switch = time(nullptr);
             scroll_x = offscreen->width();
         }
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(std::max(20, cfg.frame_interval_ms)));
     }
 
     delete matrix;
