@@ -34,6 +34,12 @@ jobs:
             libcurl4:armhf \
             libmosquitto-dev \
             libmosquitto1:armhf
+          # The Bookworm cross-compiler sysroot does not include /usr/include by
+          # default. Copy arch-independent headers into the sysroot explicitly.
+          CURL_HDR_DIR=$(dpkg -L libcurl4-openssl-dev | grep 'curl\.h$' | xargs dirname)
+          mkdir -p /usr/arm-linux-gnueabihf/include/curl
+          cp -n "$CURL_HDR_DIR"/*.h /usr/arm-linux-gnueabihf/include/curl/
+          cp /usr/include/mosquitto.h /usr/arm-linux-gnueabihf/include/
           # Create .so symlinks so the cross-linker resolves -lcurl and -lmosquitto.
           # The dev packages for armhf conflict with their amd64 counterparts via
           # shared binaries (curl-config etc.), so we install only the runtime libs
