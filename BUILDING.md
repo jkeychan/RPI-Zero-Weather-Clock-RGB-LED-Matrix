@@ -8,10 +8,16 @@ All builds need the rpi-rgb-led-matrix submodule:
 git submodule update --init matrix
 ```
 
-The binary links against `libcurl`. On Pi:
+The binary links against `libcurl` and `libmosquitto`. On Pi:
 
 ```bash
-sudo apt install libcurl4-openssl-dev
+sudo apt install libcurl4-openssl-dev libmosquitto-dev
+```
+
+`libmosquitto-dev` provides both the headers and the runtime library. If you only need the runtime (no build):
+
+```bash
+sudo apt install libmosquitto1
 ```
 
 ## Native Build (on Pi Zero W)
@@ -21,11 +27,13 @@ make
 sudo ./rgb_display
 ```
 
-`make` will build `matrix/lib/librgbmatrix.a` automatically on first run (takes ~2 min on Pi Zero W).
+`make` builds `matrix/lib/librgbmatrix.a` automatically on the first run (~2 min on Pi Zero W). Subsequent builds are fast.
 
-## Cross-Compile from macOS (recommended for development)
+**Recommended** for most use cases — no cross-compile toolchain or ARM library setup needed.
 
-Cross-compilation lets you build the ARMv6 binary on your Mac and `scp` it to the Pi — much faster than building on the Pi itself.
+## Cross-Compile from macOS
+
+Cross-compilation lets you build the ARMv6 binary on your Mac and `scp` it to the Pi, which is faster than building on the Pi for development iteration. The extra step vs. the native build is sourcing ARM versions of both `librgbmatrix` and `libmosquitto`.
 
 ### 1. Install the ARMv6 toolchain (once)
 
@@ -52,7 +60,28 @@ file prebuilt/librgbmatrix_armv6.a
 # Expected: ELF 32-bit LSB, ARM, EABI5 version 1
 ```
 
-### 3. Cross-compile and deploy
+### 3. Copy libmosquitto from the Pi (once, or after mosquitto updates)
+
+```bash
+# On Pi Zero W (install if not already present):
+sudo apt install libmosquitto-dev -y
+
+# On macOS (from repo root):
+scp jeff@pi-zero-w-rgb-screen.local:/usr/lib/arm-linux-gnueabihf/libmosquitto.a \
+    prebuilt/libmosquitto_armv6.a
+file prebuilt/libmosquitto_armv6.a
+# Expected: ELF 32-bit LSB, ARM, EABI5 version 1
+```
+
+Then update the `pi` target in `Makefile` to link the prebuilt static library instead of `-lmosquitto`:
+
+```makefile
+$(TARGET_CROSS): $(SRC) $(PREBUILT)
+    $(CXX_CROSS) $(CXXFLAGS) $(CROSS_ARCH) $(SRC) $(PREBUILT) prebuilt/libmosquitto_armv6.a \
+        -lcurl -lpthread -lm -o $(TARGET_CROSS)
+```
+
+### 4. Cross-compile and deploy
 
 ```bash
 make pi
@@ -73,9 +102,17 @@ Requires `clang-format` and `clang-tidy`. On macOS:
 brew install llvm
 ```
 
+The `make lint` target runs `clang-tidy` which parses `#include <mosquitto.h>`. Install mosquitto headers locally so the analysis completes:
+
+```bash
+brew install mosquitto
+```
+
 ## CI / GitHub Releases
 
 Precompiled ARMv6 binaries are built automatically on every version tag push (`v*.*.*`) via GitHub Actions. Download the latest binary from the [Releases page](../../releases).
+
+The release workflow and CodeQL analysis both install `libmosquitto-dev` on the Ubuntu runner.
 
 **Quick install on Pi (first time):**
 
@@ -86,6 +123,7 @@ cp sample-config.ini config.ini && vi config.ini   # add API key + zip
 bash deploy/install.sh                             # service files, log dir, system tuning
 wget https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix/releases/latest/download/rgb_display
 chmod +x rgb_display
+sudo apt install libmosquitto1 -y                  # runtime library for MQTT support
 sudo systemctl enable --now rgb_display.service
 ```
 
@@ -104,4 +142,4 @@ Arduino IDE targets microcontrollers (AVR, ARM Cortex-M) with no operating syste
 
 ## Prebuilt directory
 
-`prebuilt/librgbmatrix_armv6.a` is not committed to git (it's in `.gitignore`). It must be copied from a Pi as described above. The `prebuilt/` directory itself is tracked via `prebuilt/.gitkeep`.
+`prebuilt/librgbmatrix_armv6.a` and `prebuilt/libmosquitto_armv6.a` are not committed to git (listed in `.gitignore`). They must be copied from a Pi as described above. The `prebuilt/` directory itself is tracked via `prebuilt/.gitkeep`.
