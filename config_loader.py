@@ -12,6 +12,7 @@ CONFIG_FILE = 'config.ini'
 WEATHER_SECTION = 'Weather'
 DISPLAY_SECTION = 'Display'
 NTP_SECTION = 'NTP'
+MQTT_SECTION = 'MQTT'
 
 
 class AppConfig:
@@ -20,6 +21,7 @@ class AppConfig:
         self.load_weather_config()
         self.load_display_config()
         self.load_ntp_config()
+        self.load_mqtt_config()
 
     def load_config(self) -> configparser.ConfigParser:
         config = configparser.ConfigParser()
@@ -69,6 +71,12 @@ class AppConfig:
     def load_ntp_config(self) -> None:
         self.preferred_server = self.config.get(
             NTP_SECTION, 'preferred_server')
+
+    def load_mqtt_config(self) -> None:
+        self.mqtt_enabled = self.config.getboolean(MQTT_SECTION, 'enabled', fallback=False)
+        self.mqtt_broker  = self.config.get(MQTT_SECTION, 'broker',  fallback='localhost')
+        self.mqtt_port    = self.config.getint(MQTT_SECTION, 'port',   fallback=1883)
+        self.mqtt_topic   = self.config.get(MQTT_SECTION, 'topic',  fallback='weather/outdoor01')
 
 
 def get_app_config() -> AppConfig:
