@@ -1,7 +1,17 @@
 # .clang-format
 BasedOnStyle: Google
+Standard: Latest
+
 IndentWidth: 4
 ColumnLimit: 100
 AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
 BreakBeforeBraces: Allman
+
+PointerAlignment: Left
+ReflowComments: true
+FixNamespaceComments: true
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+AlignConsecutiveAssignments: true
+AlignConsecutiveMacros: true

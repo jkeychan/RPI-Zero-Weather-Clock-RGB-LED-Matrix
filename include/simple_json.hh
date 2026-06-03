@@ -50,7 +50,7 @@ inline std::optional<double> extract_number(const std::string& s, size_t from)
     if (i >= s.size())
         return std::nullopt;
     char* endptr = nullptr;
-    double v = std::strtod(&s[i], &endptr);
+    double v     = std::strtod(&s[i], &endptr);
     if (&s[i] == endptr)
         return std::nullopt;
     return v;
@@ -60,7 +60,7 @@ inline std::optional<double> extract_number(const std::string& s, size_t from)
 inline std::optional<std::string> json_string(const std::string& text, const std::string& key)
 {
     std::string needle = '"' + key + '"';
-    size_t p = text.find(needle);
+    size_t p           = text.find(needle);
     if (p == std::string::npos)
         return std::nullopt;
     size_t colon = text.find(':', p + needle.size());
@@ -72,7 +72,7 @@ inline std::optional<std::string> json_string(const std::string& text, const std
 inline std::optional<double> json_number(const std::string& text, const std::string& key)
 {
     std::string needle = '"' + key + '"';
-    size_t p = text.find(needle);
+    size_t p           = text.find(needle);
     if (p == std::string::npos)
         return std::nullopt;
     size_t colon = text.find(':', p + needle.size());
@@ -86,7 +86,7 @@ inline std::optional<std::string> json_array0_string(const std::string& text,
                                                      const std::string& key)
 {
     std::string a = '"' + array + '"';
-    size_t p = text.find(a);
+    size_t p      = text.find(a);
     if (p == std::string::npos)
         return std::nullopt;
     size_t lb = text.find('[', p);
@@ -96,10 +96,10 @@ inline std::optional<std::string> json_array0_string(const std::string& text,
     if (br == std::string::npos)
         return std::nullopt;
     // find end of first object
-    size_t i = br + 1;
-    int depth = 1;
+    size_t i    = br + 1;
+    int depth   = 1;
     bool in_str = false;
-    bool esc = false;
+    bool esc    = false;
     for (; i < text.size(); ++i)
     {
         char c = text[i];
@@ -135,9 +135,9 @@ inline std::optional<std::string> json_array0_string(const std::string& text,
     }
     if (depth != 0)
         return std::nullopt;
-    std::string obj = text.substr(br, i - br + 1);
+    std::string obj    = text.substr(br, i - br + 1);
     std::string needle = '"' + key + '"';
-    size_t pk = obj.find(needle);
+    size_t pk          = obj.find(needle);
     if (pk == std::string::npos)
         return std::nullopt;
     size_t colon = obj.find(':', pk + needle.size());

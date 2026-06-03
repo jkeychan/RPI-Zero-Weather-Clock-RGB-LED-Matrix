@@ -10,10 +10,10 @@ class Logger
    public:
     enum class Level
     {
-        DEBUG = 0,
-        INFO = 1,
+        DEBUG   = 0,
+        INFO    = 1,
         WARNING = 2,
-        ERROR = 3
+        ERROR   = 3
     };
 
     static Level ParseLevel(const std::string& s)
@@ -52,7 +52,7 @@ class Logger
 
    private:
     static constexpr std::uintmax_t kRotateBytes = 1024 * 1024;  // 1 MB
-    static constexpr int kKeepFiles = 3;
+    static constexpr int kKeepFiles              = 3;
 
     std::string path_;
     Level min_level_;
@@ -92,7 +92,7 @@ class Logger
         if (!f)
             return;
 
-        std::time_t now = std::time(nullptr);
+        std::time_t now  = std::time(nullptr);
         struct tm tm_buf = {};
         localtime_r(&now, &tm_buf);
         char ts[32];
