@@ -13,5 +13,3 @@ ReflowComments: true
 FixNamespaceComments: true
 SortIncludes: CaseSensitive
 IncludeBlocks: Regroup
-AlignConsecutiveAssignments: true
-AlignConsecutiveMacros: true
