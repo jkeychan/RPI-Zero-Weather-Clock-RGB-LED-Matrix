@@ -39,7 +39,9 @@ jobs:
           # Install amd64 dev package (headers) and armhf runtime library (for linking)
           # libcurl4-openssl-dev:armhf conflicts with amd64 via shared curl-config binary,
           # so install just the runtime lib and create the .so symlink manually
-          sudo apt-get install -y crossbuild-essential-armhf libcurl4-openssl-dev libcurl4t64:armhf
+          sudo apt-get install -y crossbuild-essential-armhf \
+            libcurl4-openssl-dev libcurl4t64:armhf \
+            libmosquitto-dev libmosquitto1:armhf
           # Copy amd64 curl headers into the ARM cross-compile sysroot
           CURL_HDR_DIR=$(dpkg -L libcurl4-openssl-dev | grep 'curl\.h$' | xargs dirname)
           sudo mkdir -p /usr/arm-linux-gnueabihf/include/curl
@@ -47,6 +49,10 @@ jobs:
           # Copy ARM libcurl into the cross-linker's sysroot search path and create .so symlink
           sudo cp /usr/lib/arm-linux-gnueabihf/libcurl.so.4* /usr/arm-linux-gnueabihf/lib/
           sudo ln -sf libcurl.so.4 /usr/arm-linux-gnueabihf/lib/libcurl.so
+          # Copy mosquitto header and ARM libmosquitto into the cross-compile sysroot
+          sudo cp /usr/include/mosquitto.h /usr/arm-linux-gnueabihf/include/
+          sudo cp /usr/lib/arm-linux-gnueabihf/libmosquitto.so.1* /usr/arm-linux-gnueabihf/lib/
+          sudo ln -sf libmosquitto.so.1 /usr/arm-linux-gnueabihf/lib/libmosquitto.so
 
       - name: Build librgbmatrix for ARMv6
         run: |
@@ -73,6 +79,20 @@ jobs:
           cat > release-notes.md << NOTES
           Precompiled ARMv6 binary for Raspberry Pi Zero W.
 
+          **What's new in ${REF_NAME}:**
+          - Optional MQTT weather source — subscribe to a local sensor broker and display live temperature/humidity instead of (or alongside) OpenWeatherMap
+          - When MQTT data is fresh, OWM no longer overwrites sensor temperature/humidity; OWM still provides feels-like, sunrise/sunset, and weather description
+          - Full logging from the MQTT thread for connection and message diagnostics
+
+          Add an \`[MQTT]\` section to your \`config.ini\` to enable (see README):
+          \`\`\`ini
+          [MQTT]
+          enabled = true
+          broker = 192.168.1.x
+          port = 1883
+          topic = weather/outdoor01
+          \`\`\`
+
           **Fresh install:**
           \`\`\`bash
           git clone https://github.com/${REPOSITORY}.git
@@ -81,6 +101,7 @@ jobs:
           bash deploy/install.sh
           wget https://github.com/${REPOSITORY}/releases/download/${REF_NAME}/rgb_display
           chmod +x rgb_display
+          sudo apt install libmosquitto1 -y
           sudo systemctl enable --now rgb_display.service
           \`\`\`
 
@@ -89,6 +110,7 @@ jobs:
           cd RPI-Zero-Weather-Clock-RGB-LED-Matrix
           wget -O rgb_display https://github.com/${REPOSITORY}/releases/download/${REF_NAME}/rgb_display
           chmod +x rgb_display
+          sudo apt install libmosquitto1 -y
           sudo systemctl restart rgb_display.service
           \`\`\`
 
