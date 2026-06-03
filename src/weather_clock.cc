@@ -1,6 +1,6 @@
 #include <curl/curl.h>
-#include <mosquitto.h>
 #include <getopt.h>
+#include <mosquitto.h>
 #include <unistd.h>
 
 #include <algorithm>
@@ -261,8 +261,8 @@ void WeatherThread(const AppConfig& cfg, WeatherState& state)
 struct MqttCtx
 {
     const AppConfig* cfg;
-    WeatherState*    state;
-    Logger*          logger;
+    WeatherState* state;
+    Logger* logger;
 };
 
 void MqttWeatherThread(const AppConfig& cfg, WeatherState& state, Logger& logger)
@@ -280,7 +280,8 @@ void MqttWeatherThread(const AppConfig& cfg, WeatherState& state, Logger& logger
     }
 
     mosquitto_connect_callback_set(
-        mosq, [](struct mosquitto* m, void* obj, int rc)
+        mosq,
+        [](struct mosquitto* m, void* obj, int rc)
         {
             auto* c = static_cast<MqttCtx*>(obj);
             if (rc != 0)
@@ -293,16 +294,17 @@ void MqttWeatherThread(const AppConfig& cfg, WeatherState& state, Logger& logger
         });
 
     mosquitto_message_callback_set(
-        mosq, [](struct mosquitto*, void* obj, const struct mosquitto_message* msg)
+        mosq,
+        [](struct mosquitto*, void* obj, const struct mosquitto_message* msg)
         {
             if (!msg->payload || msg->payloadlen <= 0)
                 return;
-            auto* c   = static_cast<MqttCtx*>(obj);
+            auto* c = static_cast<MqttCtx*>(obj);
             std::string payload(static_cast<char*>(msg->payload),
                                 static_cast<size_t>(msg->payloadlen));
 
             auto temp_f = json_number(payload, "tempF");
-            auto hum    = json_number(payload, "humidity");
+            auto hum = json_number(payload, "humidity");
             if (!temp_f || !hum)
             {
                 c->logger->Warning("MQTT message missing tempF or humidity: " + payload);
@@ -312,17 +314,18 @@ void MqttWeatherThread(const AppConfig& cfg, WeatherState& state, Logger& logger
             double tf = *temp_f;
             double tc = (tf - 32.0) * 5.0 / 9.0;
             int t_display = (c->cfg->temp_unit == 'F') ? static_cast<int>(std::lround(tf))
-                                                        : static_cast<int>(std::lround(tc));
-            int tc_int    = static_cast<int>(std::lround(tc));
+                                                       : static_cast<int>(std::lround(tc));
+            int tc_int = static_cast<int>(std::lround(tc));
             auto condition = json_string(payload, "condition");
 
             {
                 std::lock_guard<std::mutex> lk(c->state->mu);
-                c->state->temperature   = t_display;
+                c->state->temperature = t_display;
                 c->state->temperature_c = tc_int;
-                c->state->feels_like    = t_display;  // sensor has no feels_like; use temp as placeholder
-                c->state->feels_like_c  = tc_int;
-                c->state->humidity      = static_cast<int>(std::lround(*hum));
+                c->state->feels_like =
+                    t_display;  // sensor has no feels_like; use temp as placeholder
+                c->state->feels_like_c = tc_int;
+                c->state->humidity = static_cast<int>(std::lround(*hum));
                 if (condition)
                     c->state->main_weather = *condition;
                 c->state->mqtt_last_received = time(nullptr);
@@ -354,7 +357,8 @@ void MqttWeatherThread(const AppConfig& cfg, WeatherState& state, Logger& logger
                 int loop_rc = mosquitto_loop(mosq, 100, 1);
                 if (loop_rc != MOSQ_ERR_SUCCESS)
                 {
-                    logger.Warning("MQTT loop error rc=" + std::to_string(loop_rc) + ", reconnecting");
+                    logger.Warning("MQTT loop error rc=" + std::to_string(loop_rc) +
+                                   ", reconnecting");
                     break;
                 }
             }
