@@ -5,6 +5,7 @@ from rgbmatrix import graphics
 import weather_icons
 from config_loader import setup_logging, initialize_global_vars, get_app_config
 from weather import start_weather_thread
+from mqtt_weather import start_mqtt_weather_thread
 from utils import get_temp_color, get_color_by_time
 from constants import WIDTH, HEIGHT
 from langtons_ant import LangtonsAnt
@@ -48,6 +49,16 @@ except (AttributeError, ValueError) as e:
 # Start the weather fetching thread
 start_weather_thread(global_vars, app_config.api_key,
                      app_config.zip_code, app_config.temp_unit)
+
+# Start MQTT weather thread if enabled
+if app_config.mqtt_enabled:
+    start_mqtt_weather_thread(
+        global_vars,
+        app_config.mqtt_broker,
+        app_config.mqtt_port,
+        app_config.mqtt_topic,
+        app_config.temp_unit,
+    )
 
 
 class SplitDisplay(SampleBase):
