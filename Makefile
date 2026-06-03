@@ -18,7 +18,7 @@ MATRIX_LIB   := matrix/lib/librgbmatrix.a
 PREBUILT     := prebuilt/librgbmatrix_armv6.a
 
 CXXFLAGS     := -std=c++17 -Wall -Wextra -O2 $(INCLUDES)
-LDFLAGS      := -lcurl -lpthread -lm
+LDFLAGS      := -lcurl -lpthread -lm -lmosquitto
 
 CROSS_ARCH   := -march=armv6 -marm -mfpu=vfp -mfloat-abi=hard
 

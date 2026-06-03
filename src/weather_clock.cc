@@ -1,4 +1,5 @@
 #include <curl/curl.h>
+#include <mosquitto.h>
 #include <getopt.h>
 #include <unistd.h>
 
@@ -43,6 +44,10 @@ struct AppConfig
     std::string font_path = "fonts/5x7.bdf";
     std::string log_level = "INFO";
     std::string ntp_server = "pool.ntp.org";  // handled by systemd-timesyncd
+    bool mqtt_enabled = false;
+    std::string mqtt_broker = "localhost";
+    int mqtt_port = 1883;
+    std::string mqtt_topic = "weather/outdoor01";
 };
 
 struct WeatherState
@@ -56,6 +61,7 @@ struct WeatherState
     std::string description;
     std::atomic<long> sunrise{0};
     std::atomic<long> sunset{0};
+    std::atomic<time_t> mqtt_last_received{0};
     std::mutex mu;
 };
 
@@ -165,6 +171,17 @@ bool LoadConfig(const std::string& path, AppConfig& cfg)
             if (key == "preferred_server")
                 cfg.ntp_server = val;
         }
+        else if (section == "MQTT")
+        {
+            if (key == "enabled")
+                cfg.mqtt_enabled = (val == "true" || val == "True" || val == "1");
+            else if (key == "broker")
+                cfg.mqtt_broker = val;
+            else if (key == "port")
+                cfg.mqtt_port = SafeInt(val, 1883);
+            else if (key == "topic")
+                cfg.mqtt_topic = val;
+        }
     }
     return true;
 }
@@ -239,6 +256,97 @@ void WeatherThread(const AppConfig& cfg, WeatherState& state)
         }
     }
     curl_easy_cleanup(curl);
+}
+
+struct MqttCtx
+{
+    const AppConfig* cfg;
+    WeatherState*    state;
+};
+
+void MqttWeatherThread(const AppConfig& cfg, WeatherState& state)
+{
+    mosquitto_lib_init();
+    MqttCtx ctx{&cfg, &state};
+    struct mosquitto* mosq = mosquitto_new(nullptr, true, &ctx);
+    if (!mosq)
+    {
+        mosquitto_lib_cleanup();
+        return;
+    }
+
+    mosquitto_connect_callback_set(
+        mosq, [](struct mosquitto* m, void* obj, int rc)
+        {
+            if (rc != 0)
+                return;
+            auto* c = static_cast<MqttCtx*>(obj);
+            mosquitto_subscribe(m, nullptr, c->cfg->mqtt_topic.c_str(), 0);
+        });
+
+    mosquitto_message_callback_set(
+        mosq, [](struct mosquitto*, void* obj, const struct mosquitto_message* msg)
+        {
+            if (!msg->payload || msg->payloadlen <= 0)
+                return;
+            auto* c   = static_cast<MqttCtx*>(obj);
+            std::string payload(static_cast<char*>(msg->payload),
+                                static_cast<size_t>(msg->payloadlen));
+
+            auto temp_f = json_number(payload, "tempF");
+            auto hum    = json_number(payload, "humidity");
+            if (!temp_f || !hum)
+                return;
+
+            double tf = *temp_f;
+            double tc = (tf - 32.0) * 5.0 / 9.0;
+            int t_display = (c->cfg->temp_unit == 'F') ? static_cast<int>(std::lround(tf))
+                                                        : static_cast<int>(std::lround(tc));
+            int tc_int    = static_cast<int>(std::lround(tc));
+            auto condition = json_string(payload, "condition");
+
+            {
+                std::lock_guard<std::mutex> lk(c->state->mu);
+                c->state->temperature   = t_display;
+                c->state->temperature_c = tc_int;
+                c->state->feels_like    = t_display;  // sensor has no feels_like; use temp as placeholder
+                c->state->feels_like_c  = tc_int;
+                c->state->humidity      = static_cast<int>(std::lround(*hum));
+                if (condition)
+                    c->state->main_weather = *condition;
+                c->state->mqtt_last_received = time(nullptr);
+            }
+
+            {
+                std::lock_guard<std::mutex> lk(weather_ready_mutex);
+                weather_fetched = true;
+            }
+            weather_ready_cv.notify_one();
+        });
+
+    long backoff = 5;
+    const long max_backoff = 300;
+    while (!interrupt_received)
+    {
+        int rc = mosquitto_connect(mosq, cfg.mqtt_broker.c_str(), cfg.mqtt_port, 60);
+        if (rc == MOSQ_ERR_SUCCESS)
+        {
+            backoff = 5;
+            while (!interrupt_received)
+            {
+                int loop_rc = mosquitto_loop(mosq, 100, 1);
+                if (loop_rc != MOSQ_ERR_SUCCESS)
+                    break;
+            }
+            mosquitto_disconnect(mosq);
+        }
+        for (long i = 0; i < backoff && !interrupt_received; ++i)
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        backoff = std::min(max_backoff, backoff * 2);
+    }
+
+    mosquitto_destroy(mosq);
+    mosquitto_lib_cleanup();
 }
 
 // Maps Celsius [-40, 50] to a smooth HSV color: blue=cold, red=hot.
@@ -510,6 +618,9 @@ int main(int argc, char** argv)
 
     WeatherState weather;
     std::thread wt(WeatherThread, std::ref(cfg), std::ref(weather));
+    std::thread mt;
+    if (cfg.mqtt_enabled)
+        mt = std::thread(MqttWeatherThread, std::ref(cfg), std::ref(weather));
 
     // Wait up to 15s for the first weather fetch before starting the display loop
     {
@@ -636,5 +747,7 @@ int main(int argc, char** argv)
 
     delete matrix;
     wt.join();
+    if (mt.joinable())
+        mt.join();
     return 0;
 }
