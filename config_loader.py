@@ -130,6 +130,7 @@ def initialize_global_vars() -> Dict[str, Any]:
         "sunrise": None,
         "sunset": None,
         "weather_description": None,
+        "mqtt_last_received": None,
         "initial_weather_fetched": threading.Event(),
         "lock": threading.Lock()
     }
