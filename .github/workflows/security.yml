@@ -20,10 +20,14 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install and run actionlint
-        run: |
-          bash <(curl -sSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
-          ./actionlint
+      - name: Install actionlint
+        uses: jaxxstorm/action-install-gh-release@c5ead9a448b4660cf1e7866ee22e4dc56538031a # ratchet:jaxxstorm/action-install-gh-release@v2
+        with:
+          repo: rhysd/actionlint
+          tag: v1.7.12
+
+      - name: Run actionlint
+        run: actionlint
 
   zizmor:
     name: Zizmor - Security Analysis
