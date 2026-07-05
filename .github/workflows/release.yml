@@ -100,18 +100,8 @@ jobs:
           Requires **Raspberry Pi OS Bookworm** (Debian 12) or later.
 
           **What's new in ${REF_NAME}:**
-          - Optional MQTT weather source — subscribe to a local sensor broker and display live temperature/humidity instead of (or alongside) OpenWeatherMap
-          - When MQTT data is fresh, OWM no longer overwrites sensor temperature/humidity; OWM still provides feels-like, sunrise/sunset, and weather description
-          - Full logging from the MQTT thread for connection and message diagnostics
-
-          Add an \`[MQTT]\` section to your \`config.ini\` to enable (see README):
-          \`\`\`ini
-          [MQTT]
-          enabled = true
-          broker = 192.168.1.x
-          port = 1883
-          topic = weather/outdoor01
-          \`\`\`
+          - Fixed heat index overlapping the humidity reading on 3-digit values (e.g. a heat index of 102 no longer covers part of "51%"); it now right-aligns against the humidity column
+          - Fixed marquee weather-text scroll speed being tied to frame rate; it's now throttled to a fixed rate (\`SCROLL_MS_PER_PIXEL\`, default 80ms)
 
           **Fresh install:**
           \`\`\`bash
