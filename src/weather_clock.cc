@@ -449,8 +449,7 @@ static Color TempColor(int tempCelsius)
 static int TextWidth(const rgb_matrix::Font& font, const std::string& text)
 {
     int width = 0;
-    for (unsigned char ch : text)
-        width += font.CharacterWidth(ch);
+    for (unsigned char ch : text) width += font.CharacterWidth(ch);
     return width;
 }
 
@@ -800,9 +799,9 @@ int main(int argc, char** argv)
             rgb_matrix::DrawText(offscreen, font, scroll_x, 30, Color(255, 255, 255),
                                  weather_text.c_str());
             auto now_scroll = std::chrono::steady_clock::now();
-            auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-                                  now_scroll - last_scroll_tp)
-                                  .count();
+            auto elapsed_ms =
+                std::chrono::duration_cast<std::chrono::milliseconds>(now_scroll - last_scroll_tp)
+                    .count();
             if (elapsed_ms >= cfg.scroll_ms_per_pixel)
             {
                 if (scroll_x + est < 0)
