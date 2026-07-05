@@ -44,6 +44,7 @@ struct AppConfig
     std::string font_path = "fonts/5x7.bdf";
     std::string log_level = "INFO";
     std::string ntp_server = "pool.ntp.org";  // handled by systemd-timesyncd
+    int scroll_ms_per_pixel = 80;
     bool mqtt_enabled = false;
     std::string mqtt_broker = "localhost";
     int mqtt_port = 1883;
@@ -166,6 +167,8 @@ bool LoadConfig(const std::string& path, AppConfig& cfg)
                 cfg.font_path = val;
             else if (key == "LOG_LEVEL")
                 cfg.log_level = val;
+            else if (key == "SCROLL_MS_PER_PIXEL")
+                cfg.scroll_ms_per_pixel = SafeInt(val, 80);
         }
         else if (section == "NTP")
         {
@@ -677,6 +680,7 @@ int main(int argc, char** argv)
     bool show_main_weather = true;
     time_t last_switch = time(nullptr);
     int scroll_x = offscreen->width();
+    auto last_scroll_tp = std::chrono::steady_clock::now();
 
     auto start_tp = std::chrono::steady_clock::now();
     auto to_seconds = [](auto tp)
@@ -780,12 +784,18 @@ int main(int argc, char** argv)
         {
             rgb_matrix::DrawText(offscreen, font, scroll_x, 30, Color(255, 255, 255),
                                  weather_text.c_str());
-            // scroll_x + est: est > 0 guaranteed by the empty check above, so no
-            // signed overflow — scroll_x resets before it can reach INT_MIN
-            if (scroll_x + est < 0)
-                scroll_x = offscreen->width();
-            else
-                --scroll_x;
+            auto now_scroll = std::chrono::steady_clock::now();
+            auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                  now_scroll - last_scroll_tp)
+                                  .count();
+            if (elapsed_ms >= cfg.scroll_ms_per_pixel)
+            {
+                if (scroll_x + est < 0)
+                    scroll_x = offscreen->width();
+                else
+                    --scroll_x;
+                last_scroll_tp = now_scroll;
+            }
         }
         else
         {
@@ -803,6 +813,7 @@ int main(int argc, char** argv)
             show_main_weather = !show_main_weather;
             last_switch = time(nullptr);
             scroll_x = offscreen->width();
+            last_scroll_tp = std::chrono::steady_clock::now();
         }
     }
 
