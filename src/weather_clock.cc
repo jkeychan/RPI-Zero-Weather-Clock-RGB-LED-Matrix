@@ -190,7 +190,7 @@ bool LoadConfig(const std::string& path, AppConfig& cfg)
     return true;
 }
 
-void WeatherThread(const AppConfig& cfg, WeatherState& state)
+void WeatherThread(const AppConfig& cfg, WeatherState& state, Logger& logger)
 {
     CURL* curl = curl_easy_init();
     if (!curl)
@@ -220,42 +220,52 @@ void WeatherThread(const AppConfig& cfg, WeatherState& state)
             auto desc = json_array0_string(buffer, "weather", "description");
             if (temp && feels && hum && sr && ss && mainw && desc)
             {
-                int t_c = static_cast<int>(std::lround(*temp));
-                int f_c = static_cast<int>(std::lround(*feels));
-                int t = t_c;
-                int f = f_c;
-                if (cfg.temp_unit == 'F')
+                if (*temp < -90.0 || *temp > 65.0 || *feels < -90.0 || *feels > 65.0 ||
+                    *hum < 0.0 || *hum > 100.0)
                 {
-                    t = static_cast<int>(std::lround((t * 9.0 / 5.0) + 32));
-                    f = static_cast<int>(std::lround((f * 9.0 / 5.0) + 32));
+                    logger.Warning("OWM response has out-of-range values, ignoring: temp=" +
+                                   std::to_string(*temp) + " feels=" + std::to_string(*feels) +
+                                   " hum=" + std::to_string(*hum));
                 }
-                // If MQTT data was received within the last 15 minutes, let it own
-                // temperature and humidity — OWM still provides the fields the
-                // sensor cannot (feels_like, sunrise/sunset, description).
-                bool mqtt_fresh = state.mqtt_last_received.load() != 0 &&
-                                  (time(nullptr) - state.mqtt_last_received.load()) < 900;
-                std::lock_guard<std::mutex> lk(state.mu);
-                if (!mqtt_fresh)
+                else
                 {
-                    state.temperature = t;
-                    state.temperature_c = t_c;
-                    state.humidity = static_cast<int>(std::lround(*hum));
-                }
-                state.feels_like = f;
-                state.feels_like_c = f_c;
-                state.sunrise = static_cast<long>(*sr);
-                state.sunset = static_cast<long>(*ss);
-                state.main_weather = *mainw;
-                state.description = *desc;
-                state.version.fetch_add(1, std::memory_order_release);
-                backoff = 5;
+                    int t_c = static_cast<int>(std::lround(*temp));
+                    int f_c = static_cast<int>(std::lround(*feels));
+                    int t = t_c;
+                    int f = f_c;
+                    if (cfg.temp_unit == 'F')
+                    {
+                        t = static_cast<int>(std::lround((t * 9.0 / 5.0) + 32));
+                        f = static_cast<int>(std::lround((f * 9.0 / 5.0) + 32));
+                    }
+                    // If MQTT data was received within the last 15 minutes, let it own
+                    // temperature and humidity — OWM still provides the fields the
+                    // sensor cannot (feels_like, sunrise/sunset, description).
+                    bool mqtt_fresh = state.mqtt_last_received.load() != 0 &&
+                                      (time(nullptr) - state.mqtt_last_received.load()) < 900;
+                    std::lock_guard<std::mutex> lk(state.mu);
+                    if (!mqtt_fresh)
+                    {
+                        state.temperature = t;
+                        state.temperature_c = t_c;
+                        state.humidity = static_cast<int>(std::lround(*hum));
+                    }
+                    state.feels_like = f;
+                    state.feels_like_c = f_c;
+                    state.sunrise = static_cast<long>(*sr);
+                    state.sunset = static_cast<long>(*ss);
+                    state.main_weather = *mainw;
+                    state.description = *desc;
+                    state.version.fetch_add(1, std::memory_order_release);
+                    backoff = 5;
 
-                // Signal first-fetch wait in main()
-                {
-                    std::lock_guard<std::mutex> lk(weather_ready_mutex);
-                    weather_fetched = true;
+                    // Signal first-fetch wait in main()
+                    {
+                        std::lock_guard<std::mutex> lk(weather_ready_mutex);
+                        weather_fetched = true;
+                    }
+                    weather_ready_cv.notify_one();
                 }
-                weather_ready_cv.notify_one();
             }
             // Sleep in 1s chunks so SIGTERM wakes us within 1 second
             for (int i = 0; i < interval && !interrupt_received; ++i)
@@ -346,7 +356,8 @@ void MqttWeatherThread(const AppConfig& cfg, WeatherState& state, Logger& logger
                 c->state->feels_like_c = tc_int;
                 c->state->humidity = static_cast<int>(std::lround(*hum));
                 if (condition)
-                    c->state->main_weather = *condition;
+                    c->state->main_weather =
+                        condition->substr(0, std::min(condition->size(), size_t{32}));
                 c->state->mqtt_last_received = time(nullptr);
                 c->state->version.fetch_add(1, std::memory_order_release);
             }
@@ -674,7 +685,7 @@ int main(int argc, char** argv)
     }
 
     WeatherState weather;
-    std::thread wt(WeatherThread, std::ref(cfg), std::ref(weather));
+    std::thread wt(WeatherThread, std::ref(cfg), std::ref(weather), std::ref(logger));
     std::thread mt;
     if (cfg.mqtt_enabled)
         mt = std::thread(MqttWeatherThread, std::ref(cfg), std::ref(weather), std::ref(logger));

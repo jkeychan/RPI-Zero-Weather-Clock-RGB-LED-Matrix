@@ -44,10 +44,8 @@ inline std::optional<std::string> extract_quoted(const std::string& s, size_t fr
 inline std::optional<double> extract_number(const std::string& s, size_t from)
 {
     size_t i = skip_ws(s, from);
-    while (i < s.size() &&
-           !(s[i] == '-' || s[i] == '+' || std::isdigit(static_cast<unsigned char>(s[i]))))
-        ++i;
-    if (i >= s.size())
+    if (i >= s.size() ||
+        (s[i] != '-' && s[i] != '+' && !std::isdigit(static_cast<unsigned char>(s[i]))))
         return std::nullopt;
     char* endptr = nullptr;
     double v = std::strtod(&s[i], &endptr);
