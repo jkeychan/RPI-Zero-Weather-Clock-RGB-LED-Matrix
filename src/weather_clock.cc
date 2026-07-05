@@ -323,6 +323,12 @@ void MqttWeatherThread(const AppConfig& cfg, WeatherState& state, Logger& logger
                 c->logger->Warning("MQTT message missing tempF or humidity: " + payload);
                 return;
             }
+            if (*temp_f < -60.0 || *temp_f > 150.0 || *hum < 0.0 || *hum > 100.0)
+            {
+                c->logger->Warning("MQTT message has out-of-range sensor values, ignoring: " +
+                                   payload);
+                return;
+            }
 
             double tf = *temp_f;
             double tc = (tf - 32.0) * 5.0 / 9.0;
