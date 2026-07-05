@@ -446,6 +446,14 @@ static Color TempColor(int tempCelsius)
     return Color(static_cast<int>(r * 255), static_cast<int>(g * 255), static_cast<int>(b * 255));
 }
 
+static int TextWidth(const rgb_matrix::Font& font, const std::string& text)
+{
+    int width = 0;
+    for (unsigned char ch : text)
+        width += font.CharacterWidth(ch);
+    return width;
+}
+
 static Color HumidityColor(int humidity)
 {
     if (humidity < 30)
@@ -692,6 +700,7 @@ int main(int argc, char** argv)
     int cached_minute = -1;
     int last_tF = -9999, last_fF = -9999, last_hum = -9999;
     std::string temp_str, feels_str, humid_str;
+    int feels_width = 0;
     Color temp_color{255, 255, 255}, humid_color{255, 255, 255};
     uint32_t last_weather_version = UINT32_MAX;
     std::string mainw, desc;
@@ -770,13 +779,19 @@ int main(int argc, char** argv)
             humid_str = std::to_string(hum) + "%";
             temp_color = TempColor(tC);
             humid_color = HumidityColor(hum);
+            feels_width = TextWidth(font, feels_str);
         }
+
+        // Heat index right-aligns against the humidity column so a 3-digit
+        // reading slides left instead of overlapping "51%".
+        constexpr int kHumidX = 49;
+        int feels_x = std::min(33, kHumidX - feels_width - 1);
 
         rgb_matrix::DrawText(offscreen, font, 2, 10, dynamic, daybuf);
         rgb_matrix::DrawText(offscreen, font, 34, 10, dynamic, timebuf);
         rgb_matrix::DrawText(offscreen, font, 2, 20, temp_color, temp_str.c_str());
-        rgb_matrix::DrawText(offscreen, font, 33, 20, temp_color, feels_str.c_str());
-        rgb_matrix::DrawText(offscreen, font, 49, 20, humid_color, humid_str.c_str());
+        rgb_matrix::DrawText(offscreen, font, feels_x, 20, temp_color, feels_str.c_str());
+        rgb_matrix::DrawText(offscreen, font, kHumidX, 20, humid_color, humid_str.c_str());
 
         const std::string& weather_text = show_main_weather ? mainw : desc;
         int est = static_cast<int>(weather_text.size()) * 6;
