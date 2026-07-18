@@ -90,6 +90,36 @@ static int SafeInt(const std::string& v, int fallback) noexcept
     }
 }
 
+// NWS Rothfusz regression (https://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml).
+// T and RH are in Fahrenheit / percent; below ~80F the simpler linear formula applies.
+static double HeatIndexF(double t, double rh) noexcept
+{
+    double simple = 0.5 * (t + 61.0 + ((t - 68.0) * 1.2) + (rh * 0.094));
+    if ((simple + t) / 2.0 < 80.0)
+        return simple;
+
+    double hi = -42.379 + 2.04901523 * t + 10.14333127 * rh - 0.22475541 * t * rh -
+                0.00683783 * t * t - 0.05481717 * rh * rh + 0.00122874 * t * t * rh +
+                0.00085282 * t * rh * rh - 0.00000199 * t * t * rh * rh;
+    if (rh < 13.0 && t >= 80.0 && t <= 112.0)
+        hi -= ((13.0 - rh) / 4.0) * std::sqrt((17.0 - std::fabs(t - 95.0)) / 17.0);
+    else if (rh > 85.0 && t >= 80.0 && t <= 87.0)
+        hi += ((rh - 85.0) / 10.0) * ((87.0 - t) / 5.0);
+    return hi;
+}
+
+// Approximate outdoor WBGT in shade (Australian Bureau of Meteorology). Trades sun-exposure
+// accuracy for using only temp+humidity — see https://www.bom.gov.au/info/thermal_stress/#approximation
+// Ta in Celsius, RH in percent, result in Celsius.
+static double WetBulbGlobeShadeC(double ta_c, double rh) noexcept
+{
+    double e = (rh / 100.0) * 6.105 * std::exp((17.27 * ta_c) / (237.7 + ta_c));
+    return 0.567 * ta_c + 0.393 * e + 3.94;
+}
+
+// ACSM "black flag" extreme-risk threshold: avoid/cancel strenuous outdoor activity.
+constexpr double kWbgtDangerC = 30.0;
+
 static size_t CurlWrite(void* contents, size_t size, size_t nmemb, void* userp)
 {
     if (nmemb != 0 && size > SIZE_MAX / nmemb)
@@ -351,13 +381,18 @@ void MqttWeatherThread(const AppConfig& cfg, WeatherState& state, Logger& logger
             int tc_int = static_cast<int>(std::lround(tc));
             auto condition = json_string(payload, "condition");
 
+            double hi_f = HeatIndexF(tf, *hum);
+            int feels_display = (c->cfg->temp_unit == 'F')
+                                     ? static_cast<int>(std::lround(hi_f))
+                                     : static_cast<int>(std::lround((hi_f - 32.0) * 5.0 / 9.0));
+            int feels_c_int = static_cast<int>(std::lround((hi_f - 32.0) * 5.0 / 9.0));
+
             {
                 std::lock_guard<std::mutex> lk(c->state->mu);
                 c->state->temperature = t_display;
                 c->state->temperature_c = tc_int;
-                c->state->feels_like =
-                    t_display;  // sensor has no feels_like; use temp as placeholder
-                c->state->feels_like_c = tc_int;
+                c->state->feels_like = feels_display;
+                c->state->feels_like_c = feels_c_int;
                 c->state->humidity = static_cast<int>(std::lround(*hum));
                 if (condition)
                     c->state->main_weather =
@@ -623,6 +658,29 @@ static void DrawFog(Canvas* c, int x, int y)
     }
 }
 
+// Heat-danger indicator: small yellow lightbulb, drawn beside "feels like" when
+// shade WBGT crosses kWbgtDangerC (ACSM black-flag threshold — avoid strenuous
+// outdoor activity). Design chosen via tools/icon_preview.cc (candidate 5).
+// x,y is the icon's bottom-left (y is the text baseline it sits against).
+static void DrawDangerBulb(Canvas* c, int x, int y)
+{
+    const Color kGlass(255, 200, 0);
+    const Color kShine(255, 240, 140);
+    const Color kBase(170, 170, 170);
+    int ty = y - 5;
+    c->SetPixel(x + 1, ty, kGlass.r, kGlass.g, kGlass.b);
+    c->SetPixel(x + 2, ty, kGlass.r, kGlass.g, kGlass.b);
+    c->SetPixel(x, ty + 1, kShine.r, kShine.g, kShine.b);
+    for (int dx = 1; dx <= 3; ++dx) c->SetPixel(x + dx, ty + 1, kGlass.r, kGlass.g, kGlass.b);
+    for (int dx = 0; dx <= 3; ++dx) c->SetPixel(x + dx, ty + 2, kGlass.r, kGlass.g, kGlass.b);
+    c->SetPixel(x + 1, ty + 3, kGlass.r, kGlass.g, kGlass.b);
+    c->SetPixel(x + 2, ty + 3, kGlass.r, kGlass.g, kGlass.b);
+    c->SetPixel(x + 1, ty + 4, kBase.r, kBase.g, kBase.b);
+    c->SetPixel(x + 2, ty + 4, kBase.r, kBase.g, kBase.b);
+    c->SetPixel(x + 1, ty + 5, kBase.r, kBase.g, kBase.b);
+    c->SetPixel(x + 2, ty + 5, kBase.r, kBase.g, kBase.b);
+}
+
 static void DrawWeatherIcon(Canvas* c, const std::string& w, int x, int y)
 {
     if (w == "Clear")
@@ -721,6 +779,7 @@ int main(int argc, char** argv)
     int last_tF = -9999, last_fF = -9999, last_hum = -9999;
     std::string temp_str, feels_str, humid_str;
     int feels_width = 0;
+    bool wbgt_danger = false;
     Color temp_color{255, 255, 255}, humid_color{255, 255, 255};
     uint32_t last_weather_version = UINT32_MAX;
     std::string mainw, desc;
@@ -794,8 +853,11 @@ int main(int argc, char** argv)
             last_tF = tF;
             last_fF = fF;
             last_hum = hum;
+            wbgt_danger =
+                WetBulbGlobeShadeC(static_cast<double>(tC), static_cast<double>(hum)) >=
+                kWbgtDangerC;
             temp_str = std::to_string(tF) + (cfg.temp_unit == 'F' ? "F" : "C");
-            feels_str = std::to_string(fF) + "|";
+            feels_str = std::to_string(fF) + (wbgt_danger ? "" : "|");
             humid_str = std::to_string(hum) + "%";
             temp_color = TempColor(tC);
             humid_color = HumidityColor(hum);
@@ -803,14 +865,20 @@ int main(int argc, char** argv)
         }
 
         // Heat index right-aligns against the humidity column so a 3-digit
-        // reading slides left instead of overlapping "51%".
+        // reading slides left instead of overlapping "51%". When WBGT is in the
+        // danger zone, the trailing "|" is replaced by a 4px-wide bulb icon,
+        // right up against the humidity column (no gap).
         constexpr int kHumidX = 49;
-        int feels_x = std::min(33, kHumidX - feels_width - 1);
+        constexpr int kBulbWidth = 4;
+        int feels_x =
+            std::min(33, kHumidX - feels_width - (wbgt_danger ? kBulbWidth : 0));
 
         rgb_matrix::DrawText(offscreen, font, 2, 10, dynamic, daybuf);
         rgb_matrix::DrawText(offscreen, font, 34, 10, dynamic, timebuf);
         rgb_matrix::DrawText(offscreen, font, 2, 20, temp_color, temp_str.c_str());
         rgb_matrix::DrawText(offscreen, font, feels_x, 20, temp_color, feels_str.c_str());
+        if (wbgt_danger)
+            DrawDangerBulb(offscreen, feels_x + feels_width + 1, 20);
         rgb_matrix::DrawText(offscreen, font, kHumidX, 20, humid_color, humid_str.c_str());
 
         const std::string& weather_text = show_main_weather ? mainw : desc;
