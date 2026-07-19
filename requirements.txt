@@ -1,5 +1,5 @@
-Pillow
-requests
-ntplib
-paho-mqtt
-pytest
+Pillow>=12.3.0
+requests>=2.34.2
+ntplib>=0.4.0
+paho-mqtt>=2.1.0
+pytest>=9.1.1
