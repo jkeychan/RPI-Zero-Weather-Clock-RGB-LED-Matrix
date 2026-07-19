@@ -1,0 +1,13 @@
+# Dependabot: automated dependency and security updates
+# https://docs.github.com/en/code-security/dependabot
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "deps"
