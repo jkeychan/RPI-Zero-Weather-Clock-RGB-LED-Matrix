@@ -268,15 +268,19 @@ void WeatherThread(const AppConfig& cfg, WeatherState& state, Logger& logger)
                         t = static_cast<int>(std::lround((t * 9.0 / 5.0) + 32));
                         f = static_cast<int>(std::lround((f * 9.0 / 5.0) + 32));
                     }
-                    // If MQTT data was received within the last 15 minutes, let it own
-                    // temperature/humidity/feels_like — OWM still provides the fields the
-                    // sensor cannot (sunrise/sunset, description). feels_like must stay
-                    // gated with temperature: it is a regression computed from OWM's own
-                    // temp/humidity, so pairing it with the MQTT temp produces a
-                    // self-inconsistent reading (e.g. 73F display temp with a feels_like
-                    // computed off an 86F OWM reading).
+                    // The sensor publishes roughly every 5 minutes, so a healthy sensor
+                    // should never be more than a couple of cycles stale. If MQTT data
+                    // was received within the last 30 minutes (6x the expected cadence),
+                    // let it own temperature/humidity/feels_like — OWM still provides the
+                    // fields the sensor cannot (sunrise/sunset, description). This wide a
+                    // margin means OWM only takes over once the sensor is effectively
+                    // down, not on ordinary publish jitter or a brief Wi-Fi hiccup.
+                    // feels_like must stay gated with temperature: it is a regression
+                    // computed from OWM's own temp/humidity, so pairing it with the MQTT
+                    // temp produces a self-inconsistent reading (e.g. 73F display temp
+                    // with a feels_like computed off an 86F OWM reading).
                     bool mqtt_fresh = state.mqtt_last_received.load() != 0 &&
-                                      (time(nullptr) - state.mqtt_last_received.load()) < 900;
+                                      (time(nullptr) - state.mqtt_last_received.load()) < 1800;
                     std::lock_guard<std::mutex> lk(state.mu);
                     if (!mqtt_fresh)
                     {

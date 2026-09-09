@@ -1,4 +1,7 @@
 #pragma once
+#include <sys/wait.h>
+#include <unistd.h>
+
 #include <ctime>
 #include <filesystem>
 #include <fstream>
@@ -27,10 +30,15 @@ class Logger
         return Level::INFO;
     }
 
+    // Must be constructed before the process drops privileges (e.g. rgb_matrix's
+    // drop_privileges): the file is opened here and the descriptor is kept open for the
+    // process lifetime, so writes keep working under the post-drop UID even though that
+    // UID may lack permission to open the file itself.
     Logger(const std::string& path, Level min_level = Level::INFO)
         : path_(path), min_level_(min_level)
     {
         std::filesystem::create_directories(std::filesystem::path(path).parent_path());
+        stream_.open(path_, std::ios::app);
     }
 
     void Debug(const std::string& msg)
@@ -57,20 +65,51 @@ class Logger
     std::string path_;
     Level min_level_;
     std::mutex mu_;
+    std::ofstream stream_;
 
+    // Compresses a just-rotated file in place (path -> path.gz) by shelling out to gzip.
+    // Runs rarely (once per kRotateBytes of log growth), so the fork/exec cost is fine.
+    static void GzipFile(const std::string& path)
+    {
+        pid_t pid = fork();
+        if (pid == 0)
+        {
+            execlp("gzip", "gzip", "-f", path.c_str(), static_cast<char*>(nullptr));
+            _exit(127);
+        }
+        else if (pid > 0)
+        {
+            int status = 0;
+            waitpid(pid, &status, 0);
+        }
+    }
+
+    // Keeps kKeepFiles compressed generations (path.1.gz .. path.N.gz) plus the active
+    // file. Closes/reopens stream_ around the rename since the active file's name
+    // changes.
     void Rotate()
     {
         namespace fs = std::filesystem;
-        for (int i = kKeepFiles - 1; i > 0; --i)
+        std::error_code ec;
+
+        auto oldest = path_ + "." + std::to_string(kKeepFiles) + ".gz";
+        if (fs::exists(oldest, ec))
+            fs::remove(oldest, ec);
+
+        for (int i = kKeepFiles - 1; i >= 1; --i)
         {
-            auto older = path_ + "." + std::to_string(i);
-            auto newer = (i == 1) ? path_ : path_ + "." + std::to_string(i - 1);
-            std::error_code ec;
-            if (fs::exists(older, ec))
-                fs::remove(older, ec);
-            if (fs::exists(newer, ec))
-                fs::rename(newer, older, ec);
+            auto from = path_ + "." + std::to_string(i) + ".gz";
+            auto to = path_ + "." + std::to_string(i + 1) + ".gz";
+            if (fs::exists(from, ec))
+                fs::rename(from, to, ec);
         }
+
+        stream_.close();
+        auto rotated = path_ + ".1";
+        fs::rename(path_, rotated, ec);
+        if (!ec)
+            GzipFile(rotated);
+        stream_.open(path_, std::ios::app);
     }
 
     void Write(Level level, const char* label, const std::string& msg)
@@ -78,18 +117,15 @@ class Logger
         if (level < min_level_)
             return;
         std::lock_guard<std::mutex> lock(mu_);
+        if (!stream_)
+            return;
 
         namespace fs = std::filesystem;
         std::error_code ec;
-        if (fs::exists(path_, ec))
-        {
-            auto fsize = fs::file_size(path_, ec);
-            if (!ec && fsize >= kRotateBytes)
-                Rotate();
-        }
-
-        std::ofstream f(path_, std::ios::app);
-        if (!f)
+        auto fsize = fs::file_size(path_, ec);
+        if (!ec && fsize >= kRotateBytes)
+            Rotate();
+        if (!stream_)
             return;
 
         std::time_t now = std::time(nullptr);
@@ -98,6 +134,7 @@ class Logger
         char ts[32];
         if (std::strftime(ts, sizeof(ts), "%Y-%m-%d %H:%M:%S", &tm_buf) == 0)
             ts[0] = '\0';
-        f << "[" << ts << "] [" << label << "] " << msg << "\n";
+        stream_ << "[" << ts << "] [" << label << "] " << msg << "\n";
+        stream_.flush();
     }
 };
