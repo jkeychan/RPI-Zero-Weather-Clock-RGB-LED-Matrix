@@ -42,15 +42,14 @@ int main()
     assert(Logger::ParseLevel("INFO") == Logger::Level::INFO);
     assert(Logger::ParseLevel("BOGUS") == Logger::Level::INFO);  // default
 
-    // Test rotation: write enough data to trigger rotation
+    // Test rotation: write enough data to trigger rotation. Rotated generations are
+    // gzipped (path.1.gz, path.2.gz, ...); the active file stays plain text.
     {
         const std::string rot_path = "/tmp/test_logger_rotation.log";
         std::filesystem::remove(rot_path);
-        std::filesystem::remove(rot_path + ".1");
-        std::filesystem::remove(rot_path + ".2");
+        std::filesystem::remove(rot_path + ".1.gz");
+        std::filesystem::remove(rot_path + ".2.gz");
 
-        // Use a small rotate threshold via a subclass/workaround:
-        // Write 1MB + 1 byte by writing many lines
         Logger rot_logger(rot_path, Logger::Level::INFO);
 
         // Each line is ~40 bytes. 1MB / 40 = ~26,000 lines needed.
@@ -60,13 +59,13 @@ int main()
             rot_logger.Info(filler);
         }
 
-        // After rotation: rot_path should exist (new log), rot_path.1 should exist
+        // After rotation: rot_path should exist (new log), rot_path.1.gz should exist
         assert(std::filesystem::exists(rot_path));
-        assert(std::filesystem::exists(rot_path + ".1"));
+        assert(std::filesystem::exists(rot_path + ".1.gz"));
 
         std::filesystem::remove(rot_path);
-        std::filesystem::remove(rot_path + ".1");
-        std::filesystem::remove(rot_path + ".2");
+        std::filesystem::remove(rot_path + ".1.gz");
+        std::filesystem::remove(rot_path + ".2.gz");
     }
 
     return 0;
