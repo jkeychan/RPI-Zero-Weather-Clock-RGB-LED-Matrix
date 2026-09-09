@@ -109,8 +109,9 @@ static double HeatIndexF(double t, double rh) noexcept
 }
 
 // Approximate outdoor WBGT in shade (Australian Bureau of Meteorology). Trades sun-exposure
-// accuracy for using only temp+humidity — see https://www.bom.gov.au/info/thermal_stress/#approximation
-// Ta in Celsius, RH in percent, result in Celsius.
+// accuracy for using only temp+humidity — see
+// https://www.bom.gov.au/info/thermal_stress/#approximation Ta in Celsius, RH in percent, result in
+// Celsius.
 static double WetBulbGlobeShadeC(double ta_c, double rh) noexcept
 {
     double e = (rh / 100.0) * 6.105 * std::exp((17.27 * ta_c) / (237.7 + ta_c));
@@ -387,8 +388,8 @@ void MqttWeatherThread(const AppConfig& cfg, WeatherState& state, Logger& logger
 
             double hi_f = HeatIndexF(tf, *hum);
             int feels_display = (c->cfg->temp_unit == 'F')
-                                     ? static_cast<int>(std::lround(hi_f))
-                                     : static_cast<int>(std::lround((hi_f - 32.0) * 5.0 / 9.0));
+                                    ? static_cast<int>(std::lround(hi_f))
+                                    : static_cast<int>(std::lround((hi_f - 32.0) * 5.0 / 9.0));
             int feels_c_int = static_cast<int>(std::lround((hi_f - 32.0) * 5.0 / 9.0));
 
             {
@@ -857,9 +858,8 @@ int main(int argc, char** argv)
             last_tF = tF;
             last_fF = fF;
             last_hum = hum;
-            wbgt_danger =
-                WetBulbGlobeShadeC(static_cast<double>(tC), static_cast<double>(hum)) >=
-                kWbgtDangerC;
+            wbgt_danger = WetBulbGlobeShadeC(static_cast<double>(tC), static_cast<double>(hum)) >=
+                          kWbgtDangerC;
             temp_str = std::to_string(tF) + (cfg.temp_unit == 'F' ? "F" : "C");
             feels_str = std::to_string(fF) + (wbgt_danger ? "" : "|");
             humid_str = std::to_string(hum) + "%";
@@ -874,8 +874,7 @@ int main(int argc, char** argv)
         // right up against the humidity column (no gap).
         constexpr int kHumidX = 49;
         constexpr int kBulbWidth = 4;
-        int feels_x =
-            std::min(33, kHumidX - feels_width - (wbgt_danger ? kBulbWidth : 0));
+        int feels_x = std::min(33, kHumidX - feels_width - (wbgt_danger ? kBulbWidth : 0));
 
         rgb_matrix::DrawText(offscreen, font, 2, 10, dynamic, daybuf);
         rgb_matrix::DrawText(offscreen, font, 34, 10, dynamic, timebuf);
