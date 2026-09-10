@@ -21,7 +21,7 @@ jobs:
           persist-credentials: false
 
       - name: Install actionlint
-        uses: jaxxstorm/action-install-gh-release@c5ead9a448b4660cf1e7866ee22e4dc56538031a # ratchet:jaxxstorm/action-install-gh-release@v2
+        uses: jaxxstorm/action-install-gh-release@25e24d2d23ae098373794ef1d6faecb48ee52da8 # ratchet:jaxxstorm/action-install-gh-release@v2
         with:
           repo: rhysd/actionlint
           tag: v1.7.12
@@ -43,7 +43,7 @@ jobs:
 
       - name: Install zizmor
         id: install-zizmor
-        uses: jaxxstorm/action-install-gh-release@c5ead9a448b4660cf1e7866ee22e4dc56538031a # ratchet:jaxxstorm/action-install-gh-release@v2
+        uses: jaxxstorm/action-install-gh-release@25e24d2d23ae098373794ef1d6faecb48ee52da8 # ratchet:jaxxstorm/action-install-gh-release@v2
         with:
           repo: zizmorcore/zizmor
           tag: latest
@@ -80,7 +80,7 @@ jobs:
 
       - name: Install ratchet
         id: install-ratchet
-        uses: jaxxstorm/action-install-gh-release@c5ead9a448b4660cf1e7866ee22e4dc56538031a # ratchet:jaxxstorm/action-install-gh-release@v2
+        uses: jaxxstorm/action-install-gh-release@25e24d2d23ae098373794ef1d6faecb48ee52da8 # ratchet:jaxxstorm/action-install-gh-release@v2
         with:
           repo: sethvargo/ratchet
           tag: latest
