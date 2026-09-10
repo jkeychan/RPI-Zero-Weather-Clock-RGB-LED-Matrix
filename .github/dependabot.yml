@@ -17,6 +17,12 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    groups:
+      # init/analyze/upload-sarif must stay on the same codeql-action version —
+      # bumping one alone breaks CodeQL with a version-mismatch error.
+      codeql-action:
+        patterns:
+          - "github/codeql-action/*"
     labels:
       - "dependencies"
     commit-message:
