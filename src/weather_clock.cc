@@ -454,17 +454,10 @@ void MqttWeatherThread(const AppConfig& cfg, WeatherState& state, Logger& logger
     logger.Info("MQTT thread exiting");
 }
 
-// Maps Celsius [-40, 50] to a smooth HSV color: blue=cold, red=hot.
-static Color TempColor(int tempCelsius)
+// HSV (hue in degrees, S=1, V=1) → RGB.
+static Color HsvToRgb(double hue_degrees)
 {
-    const double t_min = -40.0;
-    const double t_max = 50.0;
-    double t = std::max(t_min, std::min(t_max, static_cast<double>(tempCelsius)));
-    double frac = (t - t_min) / (t_max - t_min);  // 0..1
-    double hue = 240.0 * (1.0 - frac);            // 240° (blue) → 0° (red)
-
-    // HSV → RGB with S=1, V=1
-    double h = hue / 60.0;
+    double h = hue_degrees / 60.0;
     int i = static_cast<int>(h) % 6;
     double f = h - static_cast<double>(static_cast<int>(h));
     double q = 1.0 - f;
@@ -507,6 +500,16 @@ static Color TempColor(int tempCelsius)
     return Color(static_cast<int>(r * 255), static_cast<int>(g * 255), static_cast<int>(b * 255));
 }
 
+// Maps Celsius [-40, 50] to a smooth HSV color: blue=cold, red=hot.
+static Color TempColor(int tempCelsius)
+{
+    const double t_min = -40.0;
+    const double t_max = 50.0;
+    double t = std::max(t_min, std::min(t_max, static_cast<double>(tempCelsius)));
+    double frac = (t - t_min) / (t_max - t_min);  // 0..1
+    return HsvToRgb(240.0 * (1.0 - frac));        // 240° (blue) → 0° (red)
+}
+
 static int TextWidth(const rgb_matrix::Font& font, const std::string& text)
 {
     int width = 0;
@@ -530,45 +533,7 @@ static Color DynamicRainbowColor(int seconds_period)
     double t = std::fmod(duration_cast<milliseconds>(now).count() / 1000.0,
                          static_cast<double>(seconds_period)) /
                seconds_period;
-    int i = static_cast<int>(t * 6);
-    double f = t * 6 - i;
-    double q = 1.0 - f;
-    double u = f;
-    double r, g, b;
-    switch (i % 6)
-    {
-        case 0:
-            r = 1;
-            g = u;
-            b = 0;
-            break;
-        case 1:
-            r = q;
-            g = 1;
-            b = 0;
-            break;
-        case 2:
-            r = 0;
-            g = 1;
-            b = u;
-            break;
-        case 3:
-            r = 0;
-            g = q;
-            b = 1;
-            break;
-        case 4:
-            r = u;
-            g = 0;
-            b = 1;
-            break;
-        default:
-            r = 1;
-            g = 0;
-            b = q;
-            break;
-    }
-    return Color(static_cast<int>(r * 255), static_cast<int>(g * 255), static_cast<int>(b * 255));
+    return HsvToRgb(t * 360.0);
 }
 
 // Sun: filled disc + 8 cardinal/diagonal rays
