@@ -130,22 +130,12 @@ for svc in ModemManager serial-getty@ttyS0 bluetooth hciuart; do
 done
 
 echo ""
-echo "=== Installing display services ==="
-# Python service (legacy — kept for reference and easy rollback)
-sudo cp "$SCRIPT_DIR/rgb_display_python.service" /etc/systemd/system/
-echo "  installed: rgb_display_python.service"
-
-# C++ service (preferred — lower CPU, no flicker)
+echo "=== Installing display service ==="
 sudo cp "$SCRIPT_DIR/rgb_display.service" /etc/systemd/system/
 sudo systemctl daemon-reload
 echo "  installed: rgb_display.service"
 echo ""
-echo "  To start the C++ binary (recommended):"
-echo "    sudo systemctl enable --now rgb_display.service"
-echo ""
-echo "  To use the Python version instead:"
-echo "    sudo systemctl disable --now rgb_display.service"
-echo "    sudo systemctl enable --now rgb_display_python.service"
+echo "  sudo systemctl enable --now rgb_display.service"
 
 echo ""
 echo "Done. Reboot for $CFG / $CMDLINE changes to take effect."

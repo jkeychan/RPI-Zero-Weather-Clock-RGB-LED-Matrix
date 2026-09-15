@@ -13,14 +13,7 @@
 
 A Raspberry Pi Zero weather clock that displays real-time weather and time on a 64×32 RGB LED Matrix. Weather data comes from OpenWeatherMap and, optionally, a local MQTT sensor that overrides the cloud reading with live indoor/outdoor measurements.
 
-The project ships two fully functional implementations:
-
-| | C++ (`src/weather_clock.cc`) | Python (`main.py`) |
-|---|---|---|
-| **Status** | Production (recommended) | Reference / community tinkering |
-| **Flicker** | None — librgbmatrix called directly | Occasional horizontal line flicker (Python GIL) |
-| **CPU (Pi Zero W)** | ~38% | ~43% |
-| **MQTT support** | Yes (`libmosquitto`) | Yes (`paho-mqtt`) |
+`src/weather_clock.cc` is a single-file C++17 application — no flicker (librgbmatrix called directly, no Python GIL), ~38% CPU on a Pi Zero W. An earlier Python implementation is archived on the [`python-reference`](https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix/tree/python-reference) branch for community tinkering; it is not maintained on `main`.
 
 ---
 
@@ -142,13 +135,9 @@ The precompiled binary already links against `libmosquitto`. If the library is m
 sudo apt install libmosquitto1 -y
 ```
 
-**Python dependency** — the Python version uses `paho-mqtt`, which is already in `requirements.txt`.
-
 ---
 
-## C++ version
-
-### Building from source (native on Pi)
+## Building from source (native on Pi)
 
 ```bash
 sudo apt install libcurl4-openssl-dev libmosquitto-dev -y
@@ -194,42 +183,9 @@ sudo chown daemon:daemon /var/log/rgb/weather_clock.log
 
 ---
 
-## Python version
-
-The original Python implementation is preserved in `main.py` for community tinkering and as a readable reference. It has feature parity with the C++ version including MQTT support.
-
-### Setup
-
-```bash
-sudo apt-get update && sudo apt-get install -y git python3-pip
-pip3 install -r requirements.txt
-
-cd matrix
-sudo make build-python
-sudo make install-python
-cd ..
-
-cp sample-config.ini config.ini
-vi config.ini
-```
-
-### Run
-
-```bash
-sudo python3 main.py
-```
-
-Or as a service:
-
-```bash
-sudo systemctl enable --now rgb_display_python.service
-```
-
----
-
 ## Logs
 
-Both versions log to `/var/log/rgb/weather_clock.log`:
+`/var/log/rgb/weather_clock.log`:
 
 ```
 [2026-06-03 12:12:13] [INFO] rgb_display starting
