@@ -16,12 +16,12 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v6 zizmor: ignore[ref-version-mismatch] pin managed by ratchet, not zizmor
         with:
           persist-credentials: false
 
       - name: Install actionlint
-        uses: jaxxstorm/action-install-gh-release@25e24d2d23ae098373794ef1d6faecb48ee52da8 # ratchet:jaxxstorm/action-install-gh-release@v2
+        uses: jaxxstorm/action-install-gh-release@25e24d2d23ae098373794ef1d6faecb48ee52da8 # ratchet:jaxxstorm/action-install-gh-release@v2 zizmor: ignore[ref-version-mismatch] pin managed by ratchet, not zizmor
         with:
           repo: rhysd/actionlint
           tag: v1.7.12
@@ -37,13 +37,13 @@ jobs:
       security-events: write
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v6 zizmor: ignore[ref-version-mismatch] pin managed by ratchet, not zizmor
         with:
           persist-credentials: false
 
       - name: Install zizmor
         id: install-zizmor
-        uses: jaxxstorm/action-install-gh-release@25e24d2d23ae098373794ef1d6faecb48ee52da8 # ratchet:jaxxstorm/action-install-gh-release@v2
+        uses: jaxxstorm/action-install-gh-release@25e24d2d23ae098373794ef1d6faecb48ee52da8 # ratchet:jaxxstorm/action-install-gh-release@v2 zizmor: ignore[ref-version-mismatch] pin managed by ratchet, not zizmor
         with:
           repo: zizmorcore/zizmor
           tag: latest
@@ -62,7 +62,7 @@ jobs:
           fi
 
       - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # ratchet:github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # ratchet:github/codeql-action/upload-sarif@v4 zizmor: ignore[ref-version-mismatch] pin managed by ratchet, not zizmor
         with:
           sarif_file: zizmor.sarif
           category: zizmor
@@ -74,13 +74,13 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v6 zizmor: ignore[ref-version-mismatch] pin managed by ratchet, not zizmor
         with:
           persist-credentials: false
 
       - name: Install ratchet
         id: install-ratchet
-        uses: jaxxstorm/action-install-gh-release@25e24d2d23ae098373794ef1d6faecb48ee52da8 # ratchet:jaxxstorm/action-install-gh-release@v2
+        uses: jaxxstorm/action-install-gh-release@25e24d2d23ae098373794ef1d6faecb48ee52da8 # ratchet:jaxxstorm/action-install-gh-release@v2 zizmor: ignore[ref-version-mismatch] pin managed by ratchet, not zizmor
         with:
           repo: sethvargo/ratchet
           tag: latest
