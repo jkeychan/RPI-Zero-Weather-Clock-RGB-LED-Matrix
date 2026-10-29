@@ -4,71 +4,58 @@ on:
   push:
     tags:
       - 'v*.*.*'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    container:
-      image: debian:bookworm-slim@sha256:b29f74a267526ae6ea104eed6c46133b0ca70ce812525df8cd5817698f0a624a # ratchet:debian:bookworm-slim
+    # Debian's armhf cross toolchain and libraries are ARMv7 (Thumb-2) whatever
+    # -march says, so the binary segfaults on a Pi Zero W. Build natively in a
+    # Raspbian (ARMv6) bookworm rootfs under QEMU instead.
+    runs-on: ubuntu-24.04
 
     steps:
-      # git must be present before checkout runs inside the container
-      - name: Bootstrap container
-        run: apt-get update -q && apt-get install -y --no-install-recommends git ca-certificates
-
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v6 zizmor: ignore[ref-version-mismatch] pin managed by ratchet, not zizmor
         with:
           submodules: recursive
           persist-credentials: false
 
-      - name: Install cross-compile dependencies
+      - name: Create Raspbian bookworm rootfs
+        env:
+          RASPBIAN_KEY_FPR: A0DA38D0D76E8B5D638872819165938D90FDDD2E
         run: |
-          dpkg --add-architecture armhf
-          apt-get update -q
-          apt-get install -y --no-install-recommends \
-            crossbuild-essential-armhf \
-            libcurl4-openssl-dev \
-            libcurl4:armhf \
-            libmosquitto-dev \
-            libmosquitto1:armhf
-          # The Bookworm cross-compiler sysroot does not include /usr/include by
-          # default. Copy arch-independent headers into the sysroot explicitly.
-          CURL_HDR_DIR=$(dpkg -L libcurl4-openssl-dev | grep 'curl\.h$' | xargs dirname)
-          mkdir -p /usr/arm-linux-gnueabihf/include/curl
-          cp -n "$CURL_HDR_DIR"/*.h /usr/arm-linux-gnueabihf/include/curl/
-          cp /usr/include/mosquitto.h /usr/arm-linux-gnueabihf/include/
-          # Create .so symlinks so the cross-linker resolves -lcurl and -lmosquitto.
-          # The dev packages for armhf conflict with their amd64 counterparts via
-          # shared binaries (curl-config etc.), so we install only the runtime libs
-          # and create the linker symlinks manually.
-          ln -sf libcurl.so.4 /usr/lib/arm-linux-gnueabihf/libcurl.so
-          ln -sf libmosquitto.so.1 /usr/lib/arm-linux-gnueabihf/libmosquitto.so
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends debootstrap qemu-user-static binfmt-support
+          curl -fsSL https://archive.raspbian.org/raspbian.public.key -o raspbian.key
+          gpg --show-keys --with-colons raspbian.key | grep -q "^fpr:::::::::${RASPBIAN_KEY_FPR}:"
+          gpg --dearmor -o raspbian.gpg raspbian.key
+          sudo debootstrap --arch=armhf --variant=minbase --keyring="$PWD/raspbian.gpg" \
+            --include=build-essential,libcurl4-openssl-dev,libmosquitto-dev \
+            bookworm /rootfs http://raspbian.raspberrypi.com/raspbian
 
-      - name: Build librgbmatrix for ARMv6
+      - name: Build rgb_display natively for ARMv6
         run: |
-          cd matrix/lib
-          make CC=arm-linux-gnueabihf-gcc \
-               CXX=arm-linux-gnueabihf-g++ \
-               CFLAGS="-march=armv6 -marm -mfpu=vfp -mfloat-abi=hard" \
-               CXXFLAGS="-march=armv6 -marm -mfpu=vfp -mfloat-abi=hard"
-          mkdir -p ../../prebuilt
-          cp librgbmatrix.a ../../prebuilt/librgbmatrix_armv6.a
+          sudo cp -a "$GITHUB_WORKSPACE" /rootfs/src
+          sudo chroot /rootfs sh -c "cd /src && make -C matrix/lib -j$(nproc) && make"
+          cp /rootfs/src/rgb_display .
+          file rgb_display
 
-      - name: Cross-compile rgb_display
+      - name: Require ARMv6 code
         run: |
-          make pi
-          file rgb_display_armv6
+          readelf -A rgb_display | tee attrs.txt
+          grep -q 'Tag_CPU_arch: v6$' attrs.txt
+          grep -q 'Tag_THUMB_ISA_use: Thumb-1' attrs.txt
 
       - name: Upload binary
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7.0.1 zizmor: ignore[ref-version-mismatch] pin managed by ratchet, not zizmor
         with:
           name: rgb_display
-          path: rgb_display_armv6
+          path: rgb_display
 
   release:
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     needs: build
     permissions:
@@ -85,7 +72,6 @@ jobs:
 
       - name: Verify binary
         run: |
-          mv rgb_display_armv6 rgb_display
           file rgb_display
           objdump -p rgb_display | grep GLIBC | sort -t_ -k3 -V | tail -3
 
@@ -105,8 +91,8 @@ jobs:
 
           **Fresh install:**
           \`\`\`bash
-          git clone https://github.com/${REPOSITORY}.git
-          cd RPI-Zero-Weather-Clock-RGB-LED-Matrix
+          git clone https://github.com/${REPOSITORY}.git ~/Documents/Code/RGB-Display
+          cd ~/Documents/Code/RGB-Display
           cp sample-config.ini config.ini && vi config.ini
           bash deploy/install.sh
           wget https://github.com/${REPOSITORY}/releases/download/${REF_NAME}/rgb_display
@@ -117,7 +103,7 @@ jobs:
 
           **Update binary only:**
           \`\`\`bash
-          cd RPI-Zero-Weather-Clock-RGB-LED-Matrix
+          cd ~/Documents/Code/RGB-Display
           wget -O rgb_display https://github.com/${REPOSITORY}/releases/download/${REF_NAME}/rgb_display
           chmod +x rgb_display
           sudo apt install libmosquitto1 -y
