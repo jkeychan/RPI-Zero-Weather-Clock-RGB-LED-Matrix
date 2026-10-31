@@ -133,9 +133,10 @@ sudo systemctl enable --now rgb_display.service
 
 ```bash
 cd ~/Documents/Code/RGB-Display
+sudo systemctl stop rgb_display.service   # a running binary can't be overwritten
 wget -O rgb_display https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix/releases/latest/download/rgb_display
 chmod +x rgb_display
-sudo systemctl restart rgb_display.service
+sudo systemctl start rgb_display.service
 ```
 
 ## Why Not Arduino IDE?

@@ -108,10 +108,11 @@ jobs:
           **Update binary only:**
           \`\`\`bash
           cd ~/Documents/Code/RGB-Display
+          sudo systemctl stop rgb_display.service
           wget -O rgb_display https://github.com/${REPOSITORY}/releases/download/${REF_NAME}/rgb_display
           chmod +x rgb_display
           sudo apt install libmosquitto1 -y
-          sudo systemctl restart rgb_display.service
+          sudo systemctl start rgb_display.service
           \`\`\`
 
           See [BUILDING.md](https://github.com/${REPOSITORY}/blob/main/BUILDING.md) to build from source.
