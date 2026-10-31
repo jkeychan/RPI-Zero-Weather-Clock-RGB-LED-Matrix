@@ -93,10 +93,6 @@ jobs:
           Precompiled ARMv6 binary for Raspberry Pi Zero W.
           Requires **Raspberry Pi OS Bookworm** (Debian 12) or later.
 
-          **What's new in ${REF_NAME}:**
-          - Fixed heat index overlapping the humidity reading on 3-digit values (e.g. a heat index of 102 no longer covers part of "51%"); it now right-aligns against the humidity column
-          - Fixed marquee weather-text scroll speed being tied to frame rate; it's now throttled to a fixed rate (\`SCROLL_MS_PER_PIXEL\`, default 80ms)
-
           **Fresh install:**
           \`\`\`bash
           git clone https://github.com/${REPOSITORY}.git ~/Documents/Code/RGB-Display
@@ -123,4 +119,5 @@ jobs:
           gh release create "${REF_NAME}" \
             --title "${REF_NAME}" \
             --notes-file release-notes.md \
+            --generate-notes \
             rgb_display

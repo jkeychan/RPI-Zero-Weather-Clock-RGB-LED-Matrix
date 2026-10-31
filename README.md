@@ -39,7 +39,7 @@ make
 sudo systemctl enable --now rgb_display.service
 ```
 
-> **Don't use the v2.1.4 release binary on a Pi Zero W.** It was cross-compiled against Debian's armhf libraries, which are ARMv7, so it segfaults on the Zero W's ARMv6 CPU. Build natively as above until a fixed release is published.
+> **Release binaries v2.1.4 and v2.1.5 don't run on a Pi Zero W** (v2.1.4 is ARMv7, v2.1.5 contains NEON). Use v2.1.6 or later from [Releases](../../releases), or build natively as above.
 
 See [BUILDING.md](BUILDING.md) to build from source (native on Pi or cross-compiled from macOS).
 

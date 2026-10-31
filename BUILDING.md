@@ -114,7 +114,7 @@ Precompiled ARMv6 binaries are built automatically on every version tag push (`v
 
 The release workflow and CodeQL analysis both install `libmosquitto-dev` on the Ubuntu runner.
 
-> **The v2.1.4 release binary is ARMv7 and segfaults on a Pi Zero W.** The workflow cross-compiles with Debian's `crossbuild-essential-armhf`, whose libc startup files and libstdc++ are ARMv7/Thumb-2, so `-march=armv6` doesn't help. Use the [native build](#native-build-on-pi-zero-w) until the release workflow builds against Raspbian.
+> **Use v2.1.6 or later on a Pi Zero W.** v2.1.4 was cross-compiled with Debian's `crossbuild-essential-armhf`, whose libc startup files and libstdc++ are ARMv7/Thumb-2, so it segfaults. v2.1.5 was built in a Raspbian rootfs under QEMU, but `matrix/config.mk`'s `-march=native` picked up QEMU's NEON-capable CPU, so it dies with SIGILL. The workflow now pins the matrix library to ARM1176 and fails the release if the binary contains any NEON instructions.
 
 **Quick install on Pi (first time):**
 
