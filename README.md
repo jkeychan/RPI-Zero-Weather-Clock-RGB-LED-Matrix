@@ -13,7 +13,7 @@
 
 A Raspberry Pi Zero weather clock that displays real-time weather and time on a 64×32 RGB LED Matrix. Weather data comes from OpenWeatherMap and, optionally, a local MQTT sensor that overrides the cloud reading with live indoor/outdoor measurements.
 
-`src/weather_clock.cc` is a single-file C++17 application — no flicker (librgbmatrix called directly, no Python GIL), ~38% CPU on a Pi Zero W. An earlier Python implementation is archived on the [`python-reference`](https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix/tree/python-reference) branch for community tinkering; it is not maintained on `main`.
+`src/weather_clock.cc` is a single-file C++17 application — no flicker (librgbmatrix called directly, no Python GIL), ~75% CPU on a Pi Zero W (see [Performance](#performance)). An earlier Python implementation is archived on the [`python-reference`](https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix/tree/python-reference) branch for community tinkering; it is not maintained on `main`.
 
 ---
 
@@ -64,6 +64,20 @@ See [BUILDING.md](BUILDING.md) to build from source (native on Pi or cross-compi
 - 64×32 RGB LED Matrix Panel ([Adafruit search](https://www.adafruit.com/search?q=RGB+LED+Matrix+Panel))
 - 5V power supply for the Pi + a separate 5V supply for the matrix
 - [OpenWeatherMap](https://openweathermap.org/api) free API key
+
+### Performance
+
+Measured with v2.1.6 on a Raspberry Pi Zero W Rev 1.1 (revision code `9000c1`, ARM1176 at 1 GHz, `performance` governor), Raspberry Pi OS (Raspbian) 13 trixie, kernel 6.18.50+rpt-rpi-v6, Adafruit RGB Matrix Bonnet driving one 64×32 panel. Matrix settings are the defaults in `src/weather_clock.cc`: `adafruit-hat` mapping, `pwm_bits=6`, `gpio_slowdown=3`, `limit_refresh_rate_hz=100`, hardware pulsing off. Langton's Ant off, MQTT on.
+
+| Metric (5-minute average) | Value |
+|---|---|
+| System CPU busy | 76% |
+| `rgb_display` refresh thread (SCHED_FIFO 99) | 67% |
+| `rgb_display` other threads | 7% |
+| Resident memory | 14 MB |
+| SoC temperature | 38 °C, no throttling |
+
+Nearly all of the load is librgbmatrix bit-banging GPIO to refresh the panel, so it scales with refresh rate and `pwm_bits`, not with weather or MQTT activity.
 
 ---
 
