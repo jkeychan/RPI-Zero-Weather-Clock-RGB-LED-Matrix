@@ -38,7 +38,9 @@ jobs:
       - name: Build rgb_display natively for ARMv6
         run: |
           sudo cp -a "$GITHUB_WORKSPACE" /rootfs/src
-          sudo chroot /rootfs sh -c "cd /src && make -C matrix/lib -j$(nproc) && make"
+          # matrix/config.mk uses -march=native, which under QEMU means a NEON-capable
+          # CPU, not the Zero W's ARM1176.
+          sudo chroot /rootfs sh -c "cd /src && make -C matrix/lib -j$(nproc) CPU_ARCH_FLAGS='-mcpu=arm1176jzf-s' && make"
           cp /rootfs/src/rgb_display .
           file rgb_display
 
@@ -47,6 +49,12 @@ jobs:
           readelf -A rgb_display | tee attrs.txt
           grep -q 'Tag_CPU_arch: v6$' attrs.txt
           grep -q 'Tag_THUMB_ISA_use: Thumb-1' attrs.txt
+          # LTO can emit NEON without changing the attributes above. In ARM mode
+          # every NEON encoding starts with f2/f3/f4; ARMv6 has none.
+          sudo cp rgb_display /rootfs/tmp/
+          sudo chroot /rootfs objdump -d /tmp/rgb_display \
+            | awk '$2 ~ /^f[234][0-9a-f]{6}$/ && $3 != ".word"' > neon.txt
+          if [ -s neon.txt ]; then head neon.txt; exit 1; fi
 
       - name: Upload binary
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # ratchet:actions/upload-artifact@v7.0.1 zizmor: ignore[ref-version-mismatch] pin managed by ratchet, not zizmor
@@ -85,10 +93,6 @@ jobs:
           Precompiled ARMv6 binary for Raspberry Pi Zero W.
           Requires **Raspberry Pi OS Bookworm** (Debian 12) or later.
 
-          **What's new in ${REF_NAME}:**
-          - Fixed heat index overlapping the humidity reading on 3-digit values (e.g. a heat index of 102 no longer covers part of "51%"); it now right-aligns against the humidity column
-          - Fixed marquee weather-text scroll speed being tied to frame rate; it's now throttled to a fixed rate (\`SCROLL_MS_PER_PIXEL\`, default 80ms)
-
           **Fresh install:**
           \`\`\`bash
           git clone https://github.com/${REPOSITORY}.git ~/Documents/Code/RGB-Display
@@ -115,4 +119,5 @@ jobs:
           gh release create "${REF_NAME}" \
             --title "${REF_NAME}" \
             --notes-file release-notes.md \
+            --generate-notes \
             rgb_display
