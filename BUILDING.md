@@ -27,7 +27,7 @@ make
 sudo ./rgb_display
 ```
 
-`make` builds `matrix/lib/librgbmatrix.a` automatically on the first run (~2 min on Pi Zero W). Subsequent builds are fast.
+`make` builds `matrix/lib/librgbmatrix.a` automatically on the first run (~12 min total on Pi Zero W, including `weather_clock.cc`). Subsequent builds only recompile `weather_clock.cc`.
 
 **Recommended** for most use cases — no cross-compile toolchain or ARM library setup needed.
 
@@ -114,11 +114,13 @@ Precompiled ARMv6 binaries are built automatically on every version tag push (`v
 
 The release workflow and CodeQL analysis both install `libmosquitto-dev` on the Ubuntu runner.
 
+> **The v2.1.4 release binary is ARMv7 and segfaults on a Pi Zero W.** The workflow cross-compiles with Debian's `crossbuild-essential-armhf`, whose libc startup files and libstdc++ are ARMv7/Thumb-2, so `-march=armv6` doesn't help. Use the [native build](#native-build-on-pi-zero-w) until the release workflow builds against Raspbian.
+
 **Quick install on Pi (first time):**
 
 ```bash
-git clone https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix.git
-cd RPI-Zero-Weather-Clock-RGB-LED-Matrix
+git clone https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix.git ~/Documents/Code/RGB-Display
+cd ~/Documents/Code/RGB-Display
 cp sample-config.ini config.ini && vi config.ini   # add API key + zip
 bash deploy/install.sh                             # service files, log dir, system tuning
 wget https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix/releases/latest/download/rgb_display
@@ -130,7 +132,7 @@ sudo systemctl enable --now rgb_display.service
 **Update binary only (already installed):**
 
 ```bash
-cd RPI-Zero-Weather-Clock-RGB-LED-Matrix
+cd ~/Documents/Code/RGB-Display
 wget -O rgb_display https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix/releases/latest/download/rgb_display
 chmod +x rgb_display
 sudo systemctl restart rgb_display.service

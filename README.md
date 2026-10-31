@@ -20,9 +20,9 @@ A Raspberry Pi Zero weather clock that displays real-time weather and time on a 
 ## Quick Start (C++ binary)
 
 ```bash
-# 1. Clone
-git clone https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix.git
-cd RPI-Zero-Weather-Clock-RGB-LED-Matrix
+# 1. Clone into the path rgb_display.service runs from
+git clone https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix.git ~/Documents/Code/RGB-Display
+cd ~/Documents/Code/RGB-Display
 
 # 2. Configure
 cp sample-config.ini config.ini
@@ -31,13 +31,15 @@ vi config.ini  # set api_key and zip_code at minimum
 # 3. Install service, log directory, and system tuning
 bash deploy/install.sh
 
-# 4. Download the precompiled ARMv6 binary
-wget https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix/releases/latest/download/rgb_display
-chmod +x rgb_display
+# 4. Build natively (~12 min on a Pi Zero W)
+sudo apt install libcurl4-openssl-dev libmosquitto-dev -y
+make
 
 # 5. Start
 sudo systemctl enable --now rgb_display.service
 ```
+
+> **Don't use the v2.1.4 release binary on a Pi Zero W.** It was cross-compiled against Debian's armhf libraries, which are ARMv7, so it segfaults on the Zero W's ARMv6 CPU. Build natively as above until a fixed release is published.
 
 See [BUILDING.md](BUILDING.md) to build from source (native on Pi or cross-compiled from macOS).
 
@@ -144,7 +146,7 @@ sudo apt install libcurl4-openssl-dev libmosquitto-dev -y
 make
 ```
 
-The first build clones and compiles the `rpi-rgb-led-matrix` submodule (~2 min on Pi Zero W). Subsequent builds are fast.
+The first build clones and compiles the `rpi-rgb-led-matrix` submodule and then `weather_clock.cc` (~12 min total on Pi Zero W). Subsequent builds only recompile `weather_clock.cc`.
 
 Output binary: `./rgb_display`
 
