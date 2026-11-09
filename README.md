@@ -13,7 +13,7 @@
 
 A Raspberry Pi Zero weather clock that displays real-time weather and time on a 64×32 RGB LED Matrix. Weather data comes from OpenWeatherMap and, optionally, a local MQTT sensor that overrides the cloud reading with live indoor/outdoor measurements.
 
-`src/weather_clock.cc` is a single-file C++17 application — no flicker (librgbmatrix called directly, no Python GIL), ~75% CPU on a Pi Zero W (see [Performance](#performance)). An earlier Python implementation is archived on the [`python-reference`](https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix/tree/python-reference) branch for community tinkering; it is not maintained on `main`.
+`src/weather_clock.cc` is a single-file C++17 application — no flicker (librgbmatrix called directly, no Python GIL), ~75% CPU on a Pi Zero W (see [Performance](#performance)). An earlier Python implementation is archived at the [`python-reference`](https://github.com/jkeychan/RPI-Zero-Weather-Clock-RGB-LED-Matrix/tree/python-reference) tag for community tinkering; it is not maintained on `main`.
 
 ---
 
