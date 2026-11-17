@@ -306,6 +306,13 @@ void WeatherThread(const AppConfig& cfg, WeatherState& state, Logger& logger)
                     weather_ready_cv.notify_one();
                 }
             }
+            else
+            {
+                long http = 0;
+                curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http);
+                logger.Warning("OWM fetch unusable (HTTP " + std::to_string(http) +
+                               "): " + buffer.substr(0, 200));
+            }
             // Sleep in 1s chunks so SIGTERM wakes us within 1 second
             for (int i = 0; i < interval && !interrupt_received; ++i)
                 std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -359,7 +366,10 @@ void MqttWeatherThread(const AppConfig& cfg, WeatherState& state, Logger& logger
         mosq,
         [](struct mosquitto*, void* obj, const struct mosquitto_message* msg)
         {
-            if (!msg->payload || msg->payloadlen <= 0)
+            // Retained messages are the broker replaying the last reading on (re)subscribe,
+            // which may be hours old if the sensor is down; treating it as fresh would
+            // block the OWM fallback. Live publishes never carry the retain flag.
+            if (!msg->payload || msg->payloadlen <= 0 || msg->retain)
                 return;
             auto* c = static_cast<MqttCtx*>(obj);
             std::string payload(static_cast<char*>(msg->payload),
